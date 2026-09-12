@@ -328,7 +328,8 @@ class ReturnApiControllerTest {
                         .name("등록자")
                         .nickname("등록자닉네임")
                         .role(role)
-                        .build())
+                        .build()
+                        .toAuthUser())
                 .build();
     }
 }

@@ -74,7 +74,7 @@ class ReportApiControllerTest {
                 .build();
 
         principal = CustomUserDetails.builder()
-                .user(user)
+                .user(user.toAuthUser())
                 .build();
     }
 

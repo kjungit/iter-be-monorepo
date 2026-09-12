@@ -320,7 +320,7 @@ class AdminPaymentApiControllerTest {
                 .status(UserStatus.ACTIVE)
                 .build();
 
-        return CustomUserDetails.builder().user(user).build();
+        return CustomUserDetails.builder().user(user.toAuthUser()).build();
     }
 
     private AdminPaymentSummaryResponse summary() {
