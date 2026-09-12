@@ -1,6 +1,6 @@
-package com.example.iter.common.stats.controller.admin.spec;
+package com.example.iter.admin.stats.controller.spec;
 
-import com.example.iter.common.stats.dto.response.AdminStatsResponse;
+import com.example.iter.admin.stats.dto.response.AdminStatsResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
