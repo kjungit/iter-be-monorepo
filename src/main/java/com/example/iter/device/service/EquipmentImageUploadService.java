@@ -1,6 +1,6 @@
 package com.example.iter.device.service;
 
-import com.example.iter.auth.domain.entity.User;
+import com.example.iter.common.security.AuthUser;
 import com.example.iter.common.security.UserStatus;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
@@ -24,7 +24,7 @@ public class EquipmentImageUploadService {
 
     @Transactional
     public PresignedImageUploadResponse issue(
-            User user,
+            AuthUser user,
             PresignedImageUploadRequest request
     ) {
         validateActiveUser(user);
@@ -52,7 +52,7 @@ public class EquipmentImageUploadService {
         return new PresignedImageUploadResponse(uploads);
     }
 
-    private void validateActiveUser(User user) {
+    private void validateActiveUser(AuthUser user) {
         if (user.getStatus() == UserStatus.SUSPENDED) {
             throw new CustomException(ErrorCode.USER_SUSPENDED);
         }
