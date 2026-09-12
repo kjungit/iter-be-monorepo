@@ -1,8 +1,8 @@
 package com.example.iter.reservation.controller.api;
 
-import com.example.iter.auth.domain.entity.Role;
+import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.domain.entity.UserStatus;
+import com.example.iter.common.security.UserStatus;
 import com.example.iter.auth.dto.response.UserSummaryResponse;
 import com.example.iter.common.config.RestApiSecurityTestConfig;
 import com.example.iter.common.dto.request.PagingRequest;

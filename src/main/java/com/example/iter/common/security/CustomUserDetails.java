@@ -55,6 +55,6 @@ public class CustomUserDetails implements UserDetails {
     @Override
     public boolean isEnabled() {
         // 탈퇴(DELETED)한 계정은 비활성 처리
-        return user.getStatus() != com.example.iter.auth.domain.entity.UserStatus.DELETED;
+        return user.getStatus() != UserStatus.DELETED;
     }
 }

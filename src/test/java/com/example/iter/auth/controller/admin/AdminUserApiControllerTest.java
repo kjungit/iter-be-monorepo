@@ -1,8 +1,8 @@
 package com.example.iter.auth.controller.admin;
 
-import com.example.iter.auth.domain.entity.Role;
+import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.domain.entity.UserStatus;
+import com.example.iter.common.security.UserStatus;
 import com.example.iter.auth.dto.request.AdminUserSearchRequest;
 import com.example.iter.auth.dto.request.AdminUserStatusRequest;
 import com.example.iter.auth.dto.response.AdminUserDetailResponse;

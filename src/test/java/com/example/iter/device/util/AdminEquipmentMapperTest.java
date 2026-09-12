@@ -1,8 +1,8 @@
 package com.example.iter.device.util;
 
-import com.example.iter.auth.domain.entity.Role;
+import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.domain.entity.UserStatus;
+import com.example.iter.common.security.UserStatus;
 import com.example.iter.device.domain.entity.Equipment;
 import com.example.iter.device.domain.entity.EquipmentCategory;
 import com.example.iter.device.domain.entity.EquipmentImage;

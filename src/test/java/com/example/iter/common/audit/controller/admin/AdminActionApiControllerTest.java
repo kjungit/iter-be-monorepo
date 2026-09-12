@@ -1,8 +1,8 @@
 package com.example.iter.common.audit.controller.admin;
 
-import com.example.iter.auth.domain.entity.Role;
+import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.domain.entity.UserStatus;
+import com.example.iter.common.security.UserStatus;
 import com.example.iter.common.audit.domain.entity.AdminActionTargetType;
 import com.example.iter.common.audit.domain.entity.AdminActionType;
 import com.example.iter.common.audit.dto.request.AdminActionSearchRequest;

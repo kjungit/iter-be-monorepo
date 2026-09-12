@@ -1,8 +1,8 @@
 package com.example.iter.device.controller.api;
 
-import com.example.iter.auth.domain.entity.Role;
+import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.domain.entity.UserStatus;
+import com.example.iter.common.security.UserStatus;
 import com.example.iter.auth.domain.repository.UserRepository;
 import com.example.iter.common.security.JwtTokenProvider;
 import com.example.iter.device.domain.entity.Equipment;
