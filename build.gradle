@@ -11,7 +11,7 @@ description = 'iter'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
@@ -53,8 +53,12 @@ tasks.named('test') {
     finalizedBy jacocoTestReport
 }
 
+// Java 25는 클래스 파일 버전 69를 생성한다. 0.8.12는 이 포맷을 읽지 못하고,
+// jacocoTestCoverageVerification이 check에 걸려 있어 곧바로 빌드 실패로 이어진다.
+// 0.8.13은 25가 실험적 지원이라 부족하고 0.8.14부터 공식 지원이다.
+// (Gradle 9.5.1의 번들 기본값도 0.8.14지만, 이 버전이 JDK 요구사항이라는 점을 드러내기 위해 명시한다.)
 jacoco {
-    toolVersion = '0.8.12'
+    toolVersion = '0.8.14'
 }
 
 jacocoTestReport {
