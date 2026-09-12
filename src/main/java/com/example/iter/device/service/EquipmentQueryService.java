@@ -1,7 +1,7 @@
 package com.example.iter.device.service;
 
 import com.example.iter.auth.domain.repository.UserRepository;
-import com.example.iter.auth.domain.entity.Role;
+import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;

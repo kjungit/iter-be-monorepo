@@ -1,9 +1,9 @@
 package com.example.iter.auth.dto.response;
 
 import com.example.iter.auth.domain.entity.PreferredLanguage;
-import com.example.iter.auth.domain.entity.Role;
+import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.domain.entity.UserStatus;
+import com.example.iter.common.security.UserStatus;
 
 public record UserResponse(
         Long id,

@@ -1,8 +1,8 @@
 package com.example.iter.auth.domain.repository;
 
-import com.example.iter.auth.domain.entity.Role;
+import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.domain.entity.UserStatus;
+import com.example.iter.common.security.UserStatus;
 import com.example.iter.common.config.JpaConfig;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;

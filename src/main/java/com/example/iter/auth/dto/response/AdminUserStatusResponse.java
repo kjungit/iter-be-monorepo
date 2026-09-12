@@ -1,7 +1,7 @@
 package com.example.iter.auth.dto.response;
 
 import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.domain.entity.UserStatus;
+import com.example.iter.common.security.UserStatus;
 
 import java.time.LocalDateTime;
 
