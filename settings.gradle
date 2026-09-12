@@ -24,4 +24,5 @@ dependencyResolutionManagement {
 rootProject.name = 'iter'
 
 include 'libs:core'
+include 'libs:security'
 include 'apps:monolith'
