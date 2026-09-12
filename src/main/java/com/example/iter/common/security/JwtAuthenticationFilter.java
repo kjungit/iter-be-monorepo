@@ -1,7 +1,5 @@
 package com.example.iter.common.security;
 
-import com.example.iter.auth.domain.entity.User;
-import com.example.iter.common.security.UserStatus;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -79,12 +77,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private void authenticateAs(Long userId) {
-        User user = customUserDetailsService.loadUserById(userId);
+        AuthUser user = customUserDetailsService.loadUserById(userId);
         if (user.getStatus() == UserStatus.DELETED) {
             log.warn("탈퇴한 회원이 접근 시도: userId={}", userId);
             return;
         }
-        CustomUserDetails principal = CustomUserDetails.builder().user(user.toAuthUser()).build();
+        CustomUserDetails principal = CustomUserDetails.builder().user(user).build();
         Authentication authentication = jwtTokenProvider.getAuthentication(principal);
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
