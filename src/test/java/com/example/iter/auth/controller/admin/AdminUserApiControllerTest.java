@@ -9,7 +9,7 @@ import com.example.iter.auth.dto.response.AdminUserDetailResponse;
 import com.example.iter.auth.dto.response.AdminUserStatusResponse;
 import com.example.iter.auth.dto.response.AdminUserSummaryResponse;
 import com.example.iter.auth.service.AdminUserService;
-import com.example.iter.common.config.RestApiSecurityTestConfig;
+import com.example.iter.config.RestApiSecurityTestConfig;
 import com.example.iter.common.dto.response.CursorPageResponse;
 import com.example.iter.common.exception.GlobalExceptionHandler;
 import com.example.iter.common.security.CustomUserDetails;

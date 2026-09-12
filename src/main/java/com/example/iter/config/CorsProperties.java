@@ -1,4 +1,4 @@
-package com.example.iter.common.config;
+package com.example.iter.config;
 
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotEmpty;

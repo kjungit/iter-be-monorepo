@@ -1,4 +1,4 @@
-package com.example.iter.common.config;
+package com.example.iter.config;
 
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.test.context.TestConfiguration;

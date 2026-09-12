@@ -1,4 +1,4 @@
-package com.example.iter.common.config;
+package com.example.iter.config;
 
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.common.response.ErrorResponse;
