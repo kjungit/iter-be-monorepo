@@ -1,4 +1,4 @@
-package com.example.iter.common.stats.dto.response;
+package com.example.iter.admin.stats.dto.response;
 
 public record AdminStatsResponse(
         long userCount,

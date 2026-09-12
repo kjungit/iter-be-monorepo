@@ -1,7 +1,7 @@
-package com.example.iter.common.stats.service;
+package com.example.iter.admin.stats.service;
 
 import com.example.iter.auth.domain.repository.UserRepository;
-import com.example.iter.common.stats.dto.response.AdminStatsResponse;
+import com.example.iter.admin.stats.dto.response.AdminStatsResponse;
 import com.example.iter.device.domain.repository.EquipmentRepository;
 import com.example.iter.dispute.domain.entity.ReportStatus;
 import com.example.iter.dispute.domain.repository.ReportRepository;

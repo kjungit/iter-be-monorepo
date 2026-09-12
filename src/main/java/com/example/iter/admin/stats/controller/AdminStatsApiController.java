@@ -1,8 +1,8 @@
-package com.example.iter.common.stats.controller.admin;
+package com.example.iter.admin.stats.controller;
 
-import com.example.iter.common.stats.controller.admin.spec.AdminStatsApiSpec;
-import com.example.iter.common.stats.dto.response.AdminStatsResponse;
-import com.example.iter.common.stats.service.AdminStatsService;
+import com.example.iter.admin.stats.controller.spec.AdminStatsApiSpec;
+import com.example.iter.admin.stats.dto.response.AdminStatsResponse;
+import com.example.iter.admin.stats.service.AdminStatsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
