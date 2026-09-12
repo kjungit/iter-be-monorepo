@@ -90,7 +90,7 @@ class AuthRefreshApiTest {
     @Test
     void accessTokenCookieReturnsInvalidRefreshToken() throws Exception {
         User user = saveUser(UserStatus.ACTIVE, "api-access@example.com");
-        String accessToken = jwtTokenProvider.generateAccessToken(user);
+        String accessToken = jwtTokenProvider.generateAccessToken(user.toAuthUser());
 
         mockMvc.perform(withCsrf(refreshRequest(accessToken)))
                 .andExpect(status().isUnauthorized())

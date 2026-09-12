@@ -72,7 +72,7 @@ class UserWithdrawalApiTest {
     void 비밀번호_회원이_탈퇴하면_회원과_장비를_소프트_삭제하고_인증정보를_폐기한다() throws Exception {
         User user = saveUser(true);
         Equipment equipment = saveEquipment(user.getId());
-        String accessToken = jwtTokenProvider.generateAccessToken(user);
+        String accessToken = jwtTokenProvider.generateAccessToken(user.toAuthUser());
         String rawRefreshToken = refreshTokenService.issueForLogin(user);
 
         mockMvc.perform(delete("/api/v1/users/me")
@@ -271,7 +271,7 @@ class UserWithdrawalApiTest {
     }
 
     private String bearer(User user) {
-        return "Bearer " + jwtTokenProvider.generateAccessToken(user);
+        return "Bearer " + jwtTokenProvider.generateAccessToken(user.toAuthUser());
     }
 
     private String passwordRequest(String password) {

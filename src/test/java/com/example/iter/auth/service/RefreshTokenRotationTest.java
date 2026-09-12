@@ -96,7 +96,7 @@ class RefreshTokenRotationTest {
     @Test
     void rejectsAccessToken() {
         User user = saveUser(UserStatus.ACTIVE, "access@example.com");
-        String accessToken = jwtTokenProvider.generateAccessToken(user);
+        String accessToken = jwtTokenProvider.generateAccessToken(user.toAuthUser());
 
         assertErrorCode(() -> refreshTokenService.rotate(accessToken), ErrorCode.INVALID_REFRESH_TOKEN);
     }
@@ -104,7 +104,7 @@ class RefreshTokenRotationTest {
     @Test
     void rejectsForgedToken() {
         User user = saveUser(UserStatus.ACTIVE, "forged@example.com");
-        String refreshToken = jwtTokenProvider.generateRefreshToken(user) + "forged";
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.toAuthUser()) + "forged";
 
         assertErrorCode(() -> refreshTokenService.rotate(refreshToken), ErrorCode.INVALID_REFRESH_TOKEN);
     }
@@ -112,7 +112,7 @@ class RefreshTokenRotationTest {
     @Test
     void rejectsRefreshTokenMissingFromDatabase() {
         User user = saveUser(UserStatus.ACTIVE, "missing@example.com");
-        String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.toAuthUser());
 
         assertErrorCode(() -> refreshTokenService.rotate(refreshToken), ErrorCode.INVALID_REFRESH_TOKEN);
     }
@@ -120,7 +120,7 @@ class RefreshTokenRotationTest {
     @Test
     void rejectsExpiredDatabaseToken() {
         User user = saveUser(UserStatus.ACTIVE, "expired@example.com");
-        String rawToken = jwtTokenProvider.generateRefreshToken(user);
+        String rawToken = jwtTokenProvider.generateRefreshToken(user.toAuthUser());
         refreshTokenRepository.saveAndFlush(RefreshToken.builder()
                 .userId(user.getId())
                 .tokenHash(refreshTokenHasher.hash(rawToken))

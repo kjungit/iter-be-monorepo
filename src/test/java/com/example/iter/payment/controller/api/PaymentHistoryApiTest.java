@@ -189,6 +189,6 @@ class PaymentHistoryApiTest {
     }
 
     private String bearerToken(User user) {
-        return "Bearer " + jwtTokenProvider.generateAccessToken(user);
+        return "Bearer " + jwtTokenProvider.generateAccessToken(user.toAuthUser());
     }
 }

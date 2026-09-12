@@ -63,7 +63,7 @@ public class AuthService {
 
     public IssuedTokenPair issueTokens(User user) {
         validateLoginAllowed(user);
-        String accessToken = jwtTokenProvider.generateAccessToken(user);
+        String accessToken = jwtTokenProvider.generateAccessToken(user.toAuthUser());
         String refreshToken = refreshTokenService.issueForLogin(user);
         return new IssuedTokenPair(accessToken, refreshToken);
     }

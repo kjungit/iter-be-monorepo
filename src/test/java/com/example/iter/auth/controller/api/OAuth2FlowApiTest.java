@@ -184,7 +184,7 @@ class OAuth2FlowApiTest {
                 signupResult.getResponse().getContentAsString(),
                 "$.oauthToken"
         );
-        String accessToken = jwtTokenProvider.generateAccessToken(existingUser);
+        String accessToken = jwtTokenProvider.generateAccessToken(existingUser.toAuthUser());
 
         mockMvc.perform(linkRequest(accessToken, linkToken))
                 .andExpect(status().isNoContent());
@@ -267,7 +267,7 @@ class OAuth2FlowApiTest {
     void linkEndpointConnectsKakaoAccountToAuthenticatedTargetUser() throws Exception {
         User targetUser = saveUser("oauth-api-link@example.com");
         String oauthToken = issueSignupActionToken("kakao-api-800", targetUser.getEmail());
-        String accessToken = jwtTokenProvider.generateAccessToken(targetUser);
+        String accessToken = jwtTokenProvider.generateAccessToken(targetUser.toAuthUser());
 
         mockMvc.perform(linkRequest(accessToken, oauthToken))
                 .andExpect(status().isNoContent());
