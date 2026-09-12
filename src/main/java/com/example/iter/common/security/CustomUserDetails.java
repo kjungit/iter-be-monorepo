@@ -1,6 +1,5 @@
 package com.example.iter.common.security;
 
-import com.example.iter.auth.domain.entity.User;
 import lombok.Builder;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
@@ -10,14 +9,18 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.List;
 
-// Spring Security와 도메인 User 엔티티 사이의 어댑터.
-// token 프로젝트와 동일한 이유로, User 엔티티가 UserDetails를 직접 구현하지 않고 감싸는 방식을 사용한다.
+// Spring Security와 인증 사용자 사이의 어댑터.
+// 도메인 엔티티가 UserDetails를 직접 구현하지 않고 감싸는 방식을 사용한다.
 // @AuthenticationPrincipal CustomUserDetails 로 컨트롤러/서비스에서 바로 꺼내 쓸 수 있다.
+//
+// 필드 이름 'user'는 바꾸지 않는다. Lombok이 이 이름으로 getUser()를 만들고,
+// 코드베이스 51곳이 principal.getUser().getId() / .getRole() 형태로 호출하고 있다.
+// AuthUser가 같은 이름의 빈 스타일 게터를 제공하므로 호출부는 그대로 컴파일된다.
 @Getter
 @Builder
 public class CustomUserDetails implements UserDetails {
 
-    private final User user;
+    private final AuthUser user;
 
     // ROLE_ 접두사는 Spring Security 표준 규칙 — hasRole("ADMIN")은 내부적으로 "ROLE_ADMIN" 권한을 찾는다.
     @Override

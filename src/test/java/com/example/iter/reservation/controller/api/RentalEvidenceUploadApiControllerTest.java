@@ -58,7 +58,7 @@ class RentalEvidenceUploadApiControllerTest {
                 .nickname("사용자닉네임")
                 .role(Role.USER)
                 .build();
-        principal = CustomUserDetails.builder().user(user).build();
+        principal = CustomUserDetails.builder().user(user.toAuthUser()).build();
     }
 
     @Test
