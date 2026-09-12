@@ -1,6 +1,7 @@
 package com.example.iter.auth.domain.entity;
 
 import com.example.iter.common.entity.BaseTimeEntity;
+import com.example.iter.common.security.AuthUser;
 import com.example.iter.common.security.Role;
 import com.example.iter.common.security.UserStatus;
 import jakarta.persistence.*;
@@ -108,5 +109,10 @@ public class User extends BaseTimeEntity {
 
     public boolean isActive() {
         return this.status == UserStatus.ACTIVE;
+    }
+
+    // 시큐리티 계층에 넘길 스냅샷. AuthUser를 만드는 유일한 경로다.
+    public AuthUser toAuthUser() {
+        return AuthUser.of(id, email, password, role, status);
     }
 }

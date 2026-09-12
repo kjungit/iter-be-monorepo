@@ -38,8 +38,8 @@ class SecurityFoundationTest {
                 .phone("010-1234-5678")
                 .build();
 
-        String accessToken = jwtTokenProvider.generateAccessToken(user);
-        String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+        String accessToken = jwtTokenProvider.generateAccessToken(user.toAuthUser());
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.toAuthUser());
 
         assertThat(jwtTokenProvider.validateToken(accessToken)).isEqualTo(TokenStatus.VALID);
         assertThat(jwtTokenProvider.validateRefreshToken(accessToken)).isEqualTo(TokenStatus.INVALID);

@@ -136,7 +136,7 @@ class UserProfileApiTest {
     }
 
     private String bearer(User user) {
-        return "Bearer " + jwtTokenProvider.generateAccessToken(user);
+        return "Bearer " + jwtTokenProvider.generateAccessToken(user.toAuthUser());
     }
 
     private void assertProfileUnchanged(Long userId) {

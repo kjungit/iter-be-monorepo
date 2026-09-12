@@ -146,7 +146,7 @@ class PasswordChangeApiTest {
     }
 
     private String bearer(User user) {
-        return "Bearer " + jwtTokenProvider.generateAccessToken(user);
+        return "Bearer " + jwtTokenProvider.generateAccessToken(user.toAuthUser());
     }
 
     private String passwordRequest(String currentPassword, String newPassword) {
