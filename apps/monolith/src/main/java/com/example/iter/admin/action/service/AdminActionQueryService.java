@@ -1,9 +1,9 @@
-package com.example.iter.common.audit.service;
+package com.example.iter.admin.action.service;
 
 import com.example.iter.common.audit.domain.repository.AdminActionRepository;
-import com.example.iter.common.audit.dto.request.AdminActionSearchRequest;
-import com.example.iter.common.audit.dto.response.AdminActionResponse;
-import com.example.iter.common.audit.util.AdminActionMapper;
+import com.example.iter.admin.action.dto.request.AdminActionSearchRequest;
+import com.example.iter.admin.action.dto.response.AdminActionResponse;
+import com.example.iter.admin.action.util.AdminActionMapper;
 import com.example.iter.common.dto.response.CursorPageResponse;
 import com.example.iter.common.pagination.CursorCodec;
 import com.example.iter.common.pagination.CursorKey;

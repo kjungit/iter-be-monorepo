@@ -1,7 +1,7 @@
-package com.example.iter.common.audit.util;
+package com.example.iter.admin.action.util;
 
 import com.example.iter.common.audit.domain.entity.AdminAction;
-import com.example.iter.common.audit.dto.response.AdminActionResponse;
+import com.example.iter.admin.action.dto.response.AdminActionResponse;
 import org.springframework.stereotype.Component;
 
 @Component

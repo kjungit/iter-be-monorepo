@@ -1,7 +1,7 @@
-package com.example.iter.common.audit.controller.admin.spec;
+package com.example.iter.admin.action.controller.spec;
 
-import com.example.iter.common.audit.dto.request.AdminActionSearchRequest;
-import com.example.iter.common.audit.dto.response.AdminActionResponse;
+import com.example.iter.admin.action.dto.request.AdminActionSearchRequest;
+import com.example.iter.admin.action.dto.response.AdminActionResponse;
 import com.example.iter.common.dto.response.CursorPageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
