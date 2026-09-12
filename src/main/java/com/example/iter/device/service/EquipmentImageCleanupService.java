@@ -1,6 +1,6 @@
 package com.example.iter.device.service;
 
-import com.example.iter.common.config.AsyncConfig;
+import com.example.iter.config.AsyncConfig;
 import com.example.iter.device.storage.EquipmentImageStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

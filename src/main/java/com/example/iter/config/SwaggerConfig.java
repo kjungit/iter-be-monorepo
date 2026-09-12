@@ -1,4 +1,4 @@
-package com.example.iter.common.config;
+package com.example.iter.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

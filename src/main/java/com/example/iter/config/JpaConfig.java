@@ -1,4 +1,4 @@
-package com.example.iter.common.config;
+package com.example.iter.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;

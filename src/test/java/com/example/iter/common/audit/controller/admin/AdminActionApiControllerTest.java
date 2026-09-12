@@ -8,7 +8,7 @@ import com.example.iter.common.audit.domain.entity.AdminActionType;
 import com.example.iter.common.audit.dto.request.AdminActionSearchRequest;
 import com.example.iter.common.audit.dto.response.AdminActionResponse;
 import com.example.iter.common.audit.service.AdminActionQueryService;
-import com.example.iter.common.config.RestApiSecurityTestConfig;
+import com.example.iter.config.RestApiSecurityTestConfig;
 import com.example.iter.common.dto.response.CursorPageResponse;
 import com.example.iter.common.exception.GlobalExceptionHandler;
 import com.example.iter.common.security.CustomUserDetails;
