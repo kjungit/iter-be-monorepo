@@ -1,5 +1,6 @@
 package com.example.iter.reservation.service;
 
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.delivery.domain.entity.Shipping;

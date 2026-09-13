@@ -14,7 +14,7 @@ import com.example.iter.payment.dto.response.PaymentReadyResponse;
 import com.example.iter.payment.dto.toss.TossConfirmApiResponse;
 import com.example.iter.payment.event.PaymentConfirmedEvent;
 import com.example.iter.reservation.domain.entity.Rental;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.domain.repository.RentalRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

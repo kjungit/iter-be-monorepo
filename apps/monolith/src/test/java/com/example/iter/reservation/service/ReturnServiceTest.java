@@ -17,7 +17,7 @@ import com.example.iter.reservation.domain.entity.ProductConditionType;
 import com.example.iter.reservation.domain.entity.Receipt;
 import com.example.iter.reservation.domain.entity.ReceiptImage;
 import com.example.iter.reservation.domain.entity.Rental;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.domain.entity.ReturnReceipt;
 import com.example.iter.reservation.domain.entity.ReturnReceiptImage;
 import com.example.iter.reservation.domain.repository.ReceiptImageRepository;

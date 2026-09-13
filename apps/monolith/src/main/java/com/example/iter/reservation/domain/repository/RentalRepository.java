@@ -1,7 +1,7 @@
 package com.example.iter.reservation.domain.repository;
 
 import com.example.iter.reservation.domain.entity.Rental;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

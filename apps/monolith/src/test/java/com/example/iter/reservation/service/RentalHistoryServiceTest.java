@@ -17,7 +17,7 @@ import com.example.iter.device.api.EquipmentInfo;
 import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.device.api.EquipmentThumbnailQueryPort;
 import com.example.iter.reservation.domain.entity.Rental;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.domain.repository.RentalHistoryRepository;
 import com.example.iter.reservation.dto.request.RentalHistorySearchRequest;
 import com.example.iter.reservation.util.RentalHistoryMapper;

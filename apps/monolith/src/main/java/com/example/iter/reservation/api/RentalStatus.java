@@ -1,4 +1,4 @@
-package com.example.iter.reservation.domain.entity;
+package com.example.iter.reservation.api;
 
 // ERD RENTAL.status — 대여 생명주기 전체를 나타내는 상태 (기획서 6-2 상태 전이 참고)
 // PENDING -> REQUESTED -> APPROVED -> SHIPPING -> RECEIVED -> RENTING

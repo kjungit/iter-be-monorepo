@@ -15,7 +15,7 @@ import com.example.iter.payment.dto.response.AdminPaymentDetailResponse;
 import com.example.iter.payment.dto.response.AdminPaymentRentalResponse;
 import com.example.iter.payment.dto.response.AdminPaymentSummaryResponse;
 import com.example.iter.payment.service.AdminPaymentQueryService;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

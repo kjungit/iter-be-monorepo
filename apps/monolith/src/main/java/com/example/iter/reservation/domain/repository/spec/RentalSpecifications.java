@@ -1,7 +1,7 @@
 package com.example.iter.reservation.domain.repository.spec;
 
 import com.example.iter.reservation.domain.entity.Rental;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import org.springframework.data.jpa.domain.Specification;
 
 // 대여자가 빌린 거래(findBorrowedHistory) 조회 조건을 조립한다.

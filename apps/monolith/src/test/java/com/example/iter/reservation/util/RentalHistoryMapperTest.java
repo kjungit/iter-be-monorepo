@@ -5,7 +5,7 @@ import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
 import com.example.iter.reservation.domain.entity.Rental;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

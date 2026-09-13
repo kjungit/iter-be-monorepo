@@ -17,7 +17,7 @@ import com.example.iter.common.pagination.CursorKey;
 import com.example.iter.device.domain.repository.EquipmentRepository;
 import com.example.iter.dispute.domain.entity.ReportTargetType;
 import com.example.iter.dispute.domain.repository.ReportRepository;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.domain.repository.RentalRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

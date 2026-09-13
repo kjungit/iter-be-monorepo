@@ -1,6 +1,6 @@
 package com.example.iter.reservation.dto.response;
 
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 
 public record ReturnConfirmationResponse(
         Long rentalId,
