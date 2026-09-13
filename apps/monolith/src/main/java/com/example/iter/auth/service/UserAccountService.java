@@ -9,8 +9,7 @@ import com.example.iter.auth.dto.response.UserResponse;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.device.api.EquipmentCommandPort;
-import com.example.iter.reservation.domain.policy.RentalStatusPolicy;
-import com.example.iter.reservation.domain.repository.RentalRepository;
+import com.example.iter.reservation.api.RentalQueryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,7 +24,7 @@ import java.time.LocalDateTime;
 public class UserAccountService {
 
     private final UserRepository userRepository;
-    private final RentalRepository rentalRepository;
+    private final RentalQueryPort rentalQueryPort;
     private final EquipmentCommandPort equipmentCommandPort;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenService refreshTokenService;
@@ -95,9 +94,8 @@ public class UserAccountService {
     }
 
     private boolean hasWithdrawalBlockingRental(Long userId) {
-        var blockingStatuses = RentalStatusPolicy.withdrawalBlockingStatuses();
-        return rentalRepository.countByRenterIdAndStatusIn(userId, blockingStatuses) > 0
-                || rentalRepository.countLentByOwnerIdAndStatusIn(userId, blockingStatuses) > 0;
+        // 어떤 상태가 탈퇴를 막는지는 reservation 이 판단한다.
+        return rentalQueryPort.hasWithdrawalBlockingRental(userId);
     }
 
     private User findUser(Long userId) {
