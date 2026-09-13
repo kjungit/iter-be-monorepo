@@ -248,7 +248,7 @@ class AdminReportApiControllerTest {
                 .role(role)
                 .status(UserStatus.ACTIVE)
                 .build();
-        return CustomUserDetails.builder().user(user).build();
+        return CustomUserDetails.builder().user(user.toAuthUser()).build();
     }
 
     private AdminReportDetailResponse detailResponse(ReportStatus status, String adminMemo) {

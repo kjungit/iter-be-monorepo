@@ -84,7 +84,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             log.warn("탈퇴한 회원이 접근 시도: userId={}", userId);
             return;
         }
-        CustomUserDetails principal = CustomUserDetails.builder().user(user).build();
+        CustomUserDetails principal = CustomUserDetails.builder().user(user.toAuthUser()).build();
         Authentication authentication = jwtTokenProvider.getAuthentication(principal);
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }

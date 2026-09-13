@@ -220,7 +220,7 @@ class AdminUserApiControllerTest {
                 .build();
 
         return CustomUserDetails.builder()
-                .user(user)
+                .user(user.toAuthUser())
                 .build();
     }
 }

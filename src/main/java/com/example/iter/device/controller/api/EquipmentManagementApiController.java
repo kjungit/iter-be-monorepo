@@ -49,7 +49,7 @@ public class EquipmentManagementApiController implements EquipmentManagementApiS
             @Valid @RequestBody PresignedImageUploadRequest request
     ) {
         return ResponseEntity.ok(equipmentImageUploadService.issue(
-                principal.getUser().toAuthUser(), request));
+                principal.getUser(), request));
     }
 
     @Override
@@ -59,7 +59,7 @@ public class EquipmentManagementApiController implements EquipmentManagementApiS
             @Valid @RequestBody EquipmentCreateRequest request
     ) {
         EquipmentDetailResponse response = equipmentManagementService.create(
-                principal.getUser().toAuthUser(), request);
+                principal.getUser(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -92,7 +92,7 @@ public class EquipmentManagementApiController implements EquipmentManagementApiS
             @Valid @RequestBody EquipmentStatusUpdateRequest request
     ) {
         return ResponseEntity.ok(equipmentManagementService.updateStatus(
-                principal.getUser().toAuthUser(), equipmentId, request));
+                principal.getUser(), equipmentId, request));
     }
 
     @Override
@@ -104,7 +104,7 @@ public class EquipmentManagementApiController implements EquipmentManagementApiS
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 equipmentManagementService.addImages(
-                        principal.getUser().toAuthUser(), equipmentId, request));
+                        principal.getUser(), equipmentId, request));
     }
 
     @Override
@@ -127,6 +127,6 @@ public class EquipmentManagementApiController implements EquipmentManagementApiS
             @Valid @ModelAttribute EquipmentScheduleRequest request
     ) {
         return ResponseEntity.ok(equipmentQueryService.getEquipmentSchedule(
-                principal.getUser().toAuthUser(), equipmentId, request));
+                principal.getUser(), equipmentId, request));
     }
 }
