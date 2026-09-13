@@ -5,8 +5,8 @@ import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.common.pagination.CursorCodec;
 import com.example.iter.common.pagination.CursorKey;
-import com.example.iter.device.domain.entity.Equipment;
-import com.example.iter.device.domain.repository.EquipmentRepository;
+import com.example.iter.device.api.EquipmentInfo;
+import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.reservation.domain.entity.Rental;
 import com.example.iter.reservation.domain.entity.RentalReview;
 import com.example.iter.reservation.domain.entity.RentalStatus;
@@ -32,14 +32,14 @@ public class RentalReviewService {
 
     private final RentalReviewRepository rentalReviewRepository;
     private final RentalRepository rentalRepository;
-    private final EquipmentRepository equipmentRepository;
+    private final EquipmentQueryPort equipmentQueryPort;
     private final ApplicationEventPublisher eventPublisher;
 
     // 거래 당사자(대여자 또는 장비 등록자)가 상대방에게 리뷰를 남깁니다.
     @Transactional
     public RentalReviewResponse createReview(Long reviewerId, Long rentalId, RentalReviewCreateRequest request) {
         Rental rental = findRental(rentalId);
-        Equipment equipment = findEquipment(rental.getEquipmentId());
+        EquipmentInfo equipment = findEquipment(rental.getEquipmentId());
 
         Long revieweeId = resolveRevieweeId(reviewerId, rental, equipment);
 
@@ -62,7 +62,7 @@ public class RentalReviewService {
     @Transactional(readOnly = true)
     public List<RentalReviewResponse> getReviewsForRental(Long userId, Long rentalId) {
         Rental rental = findRental(rentalId);
-        Equipment equipment = findEquipment(rental.getEquipmentId());
+        EquipmentInfo equipment = findEquipment(rental.getEquipmentId());
         validateParty(userId, rental, equipment);
 
         return rentalReviewRepository.findAllByRentalId(rentalId).stream()
@@ -121,12 +121,12 @@ public class RentalReviewService {
                 .orElseThrow(() -> new CustomException(ErrorCode.RENTAL_NOT_FOUND));
     }
 
-    private Equipment findEquipment(Long equipmentId) {
-        return equipmentRepository.findById(equipmentId)
+    private EquipmentInfo findEquipment(Long equipmentId) {
+        return equipmentQueryPort.find(equipmentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
     }
 
-    private void validateParty(Long userId, Rental rental, Equipment equipment) {
+    private void validateParty(Long userId, Rental rental, EquipmentInfo equipment) {
         boolean renter = rental.isRenter(userId);
         boolean owner = equipment.isOwnedBy(userId);
 
@@ -137,10 +137,10 @@ public class RentalReviewService {
 
     // 로그인 사용자가 이 거래의 대여자인지 등록자인지 판별해 리뷰 대상(revieweeId)을 정하고,
     // 리뷰 작성이 가능한 상태인지(반납 완료 여부, 중복 작성 여부) 검증합니다.
-    private Long resolveRevieweeId(Long reviewerId, Rental rental, Equipment equipment) {
+    private Long resolveRevieweeId(Long reviewerId, Rental rental, EquipmentInfo equipment) {
         Long revieweeId;
         if (rental.isRenter(reviewerId)) {
-            revieweeId = equipment.getOwnerId();
+            revieweeId = equipment.ownerId();
         } else if (equipment.isOwnedBy(reviewerId)) {
             revieweeId = rental.getRenterId();
         } else {

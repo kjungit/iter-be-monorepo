@@ -8,6 +8,8 @@ import com.example.iter.common.security.UserStatus;
 import com.example.iter.common.dto.response.PageResponse;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
+import com.example.iter.device.api.EquipmentInfo;
+import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.device.domain.entity.Equipment;
 import com.example.iter.device.domain.repository.EquipmentRepository;
 import com.example.iter.payment.client.TossApiException;
@@ -59,7 +61,9 @@ public class RentalService {
     );
 
     private final RentalRepository rentalRepository;
+    // 락 경로(findByIdForUpdate)만 남아 있다. PR 07 에서 EquipmentLockPort 로 옮기면 이 필드는 사라진다.
     private final EquipmentRepository equipmentRepository;
+    private final EquipmentQueryPort equipmentQueryPort;
     private final UserQueryPort userQueryPort;
     private final UserLockPort userLockPort;
     private final PaymentRepository paymentRepository;
@@ -139,7 +143,7 @@ public class RentalService {
     @Transactional(readOnly = true)
     public RentalDetailResponse getRentalDetail(Long rentalId, Long currentUserId, boolean isAdmin) {
         Rental rental = getRentalOrThrow(rentalId);
-        Equipment equipment = equipmentRepository.findById(rental.getEquipmentId())
+        EquipmentInfo equipment = equipmentQueryPort.find(rental.getEquipmentId())
                 .orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
 
         boolean isParty = rental.isRenter(currentUserId) || equipment.isOwnedBy(currentUserId);
@@ -149,7 +153,7 @@ public class RentalService {
 
         UserSummary renter = userQueryPort.findSummary(rental.getRenterId())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        UserSummary owner = userQueryPort.findSummary(equipment.getOwnerId())
+        UserSummary owner = userQueryPort.findSummary(equipment.ownerId())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         PaymentStatus paymentStatus = paymentRepository.findByRentalId(rentalId)
                 .map(Payment::getStatus)
@@ -294,7 +298,7 @@ public class RentalService {
     @Transactional
     public RentalRejectResponse rejectRental(Long rentalId, Long currentUserId, boolean isAdmin, String reason) {
         Rental rental = getRentalWithLockOrThrow(rentalId);
-        Equipment equipment = equipmentRepository.findById(rental.getEquipmentId())
+        EquipmentInfo equipment = equipmentQueryPort.find(rental.getEquipmentId())
                 .orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
 
         if (!isAdmin && !equipment.isOwnedBy(currentUserId)) {
