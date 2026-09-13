@@ -9,7 +9,7 @@ import com.example.iter.payment.domain.entity.Payment;
 import com.example.iter.payment.domain.entity.PaymentStatus;
 import com.example.iter.payment.service.model.AdminPaymentSummaryRow;
 import com.example.iter.reservation.domain.entity.Rental;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.domain.repository.RentalRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

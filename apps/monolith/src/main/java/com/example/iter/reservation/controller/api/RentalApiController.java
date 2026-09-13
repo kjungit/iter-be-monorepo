@@ -3,7 +3,7 @@ package com.example.iter.reservation.controller.api;
 import com.example.iter.common.security.Role;
 import com.example.iter.common.dto.response.PageResponse;
 import com.example.iter.common.security.CustomUserDetails;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.dto.request.RentalCreateRequest;
 import com.example.iter.reservation.dto.request.RentalRejectRequest;
 import com.example.iter.reservation.dto.response.RentalApproveResponse;

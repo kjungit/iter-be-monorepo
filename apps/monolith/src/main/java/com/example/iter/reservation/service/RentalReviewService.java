@@ -9,7 +9,7 @@ import com.example.iter.device.api.EquipmentInfo;
 import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.reservation.domain.entity.Rental;
 import com.example.iter.reservation.domain.entity.RentalReview;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.domain.repository.RentalRepository;
 import com.example.iter.reservation.domain.repository.RentalReviewRepository;
 import com.example.iter.reservation.dto.request.RentalReviewCreateRequest;

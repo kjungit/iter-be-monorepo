@@ -1,6 +1,6 @@
 package com.example.iter.reservation.domain.policy;
 
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 
 import java.util.EnumSet;
 import java.util.Set;

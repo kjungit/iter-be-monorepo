@@ -1,7 +1,7 @@
 package com.example.iter.device.dto.response;
 
 import com.example.iter.reservation.domain.entity.Rental;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 
 import java.time.LocalDate;
 

@@ -13,7 +13,7 @@ import com.example.iter.common.security.CustomUserDetails;
 import com.example.iter.common.security.CustomUserDetailsService;
 import com.example.iter.common.security.JwtTokenProvider;
 import com.example.iter.reservation.domain.entity.ProductConditionType;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.dto.request.ReturnConfirmationRequest;
 import com.example.iter.reservation.dto.response.ConditionEvidenceResponse;
 import com.example.iter.reservation.dto.response.ReturnComparisonResponse;

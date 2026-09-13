@@ -25,7 +25,7 @@ import com.example.iter.device.storage.EquipmentImageStorage;
 import com.example.iter.device.storage.StoredImage;
 import com.example.iter.device.storage.ValidatedUpload;
 import com.example.iter.device.support.EquipmentImageUrlResolver;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.domain.policy.RentalConflictPolicy;
 import com.example.iter.reservation.domain.policy.RentalStatusPolicy;
 import com.example.iter.reservation.domain.repository.RentalRepository;

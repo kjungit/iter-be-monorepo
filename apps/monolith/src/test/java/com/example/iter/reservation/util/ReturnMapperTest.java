@@ -5,7 +5,7 @@ import com.example.iter.auth.domain.entity.User;
 import com.example.iter.reservation.domain.entity.ProductConditionType;
 import com.example.iter.reservation.domain.entity.Receipt;
 import com.example.iter.reservation.domain.entity.Rental;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.domain.entity.ReturnReceipt;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
