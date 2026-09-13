@@ -4,7 +4,7 @@ import com.example.iter.common.audit.domain.entity.AdminAction;
 import com.example.iter.common.audit.domain.entity.AdminActionTargetType;
 import com.example.iter.common.audit.domain.entity.AdminActionType;
 import com.example.iter.common.audit.domain.repository.AdminActionRepository;
-import com.example.iter.common.config.JpaConfig;
+import com.example.iter.config.JpaConfig;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

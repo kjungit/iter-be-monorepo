@@ -4,7 +4,7 @@ import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
 import com.example.iter.auth.domain.repository.UserRepository;
-import com.example.iter.common.config.JpaConfig;
+import com.example.iter.config.JpaConfig;
 import com.example.iter.payment.domain.entity.Payment;
 import com.example.iter.payment.domain.entity.PaymentStatus;
 import com.example.iter.payment.service.model.AdminPaymentSummaryRow;

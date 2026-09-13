@@ -1,7 +1,7 @@
 package com.example.iter.auth.domain.repository;
 
 import com.example.iter.auth.domain.entity.User;
-import com.example.iter.common.config.JpaConfig;
+import com.example.iter.config.JpaConfig;
 import com.example.iter.device.domain.entity.Equipment;
 import com.example.iter.device.domain.entity.EquipmentCategory;
 import com.example.iter.device.domain.repository.EquipmentRepository;
