@@ -11,8 +11,8 @@ import com.example.iter.device.domain.entity.EquipmentCategory;
 import com.example.iter.device.api.EquipmentInfo;
 import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.device.api.EquipmentThumbnailQueryPort;
-import com.example.iter.dispute.domain.entity.Dispute;
-import com.example.iter.dispute.domain.repository.DisputeRepository;
+import com.example.iter.dispute.api.DisputeCommandPort;
+import com.example.iter.dispute.api.ReturnDisputeCommand;
 import com.example.iter.reservation.domain.entity.ProductConditionType;
 import com.example.iter.reservation.domain.entity.Receipt;
 import com.example.iter.reservation.domain.entity.ReceiptImage;
@@ -88,7 +88,7 @@ class ReturnServiceTest {
     private ReturnReceiptImageRepository returnReceiptImageRepository;
 
     @Mock
-    private DisputeRepository disputeRepository;
+    private DisputeCommandPort disputeCommandPort;
 
     @Spy
     private ReturnMapper returnMapper = new ReturnMapper();
@@ -232,24 +232,14 @@ class ReturnServiceTest {
         assertThat(response.status()).isEqualTo(RentalStatus.COMPLETED);
         assertThat(response.disputeId()).isNull();
         verify(rentalRepository).findWithLockById(RENTAL_ID);
-        verifyNoInteractions(disputeRepository);
+        verifyNoInteractions(disputeCommandPort);
     }
 
     @Test
     void 비정상_반납을_확인하면_분쟁을_생성하고_거래를_DISPUTED로_변경한다() {
         Rental rental = rental(RentalStatus.RETURNED);
         stubConfirmationData(rental);
-        when(disputeRepository.save(any(Dispute.class))).thenAnswer(invocation -> {
-            Dispute value = invocation.getArgument(0);
-            return Dispute.builder()
-                    .id(50L)
-                    .rentalId(value.getRentalId())
-                    .reporterId(value.getReporterId())
-                    .respondentId(value.getRespondentId())
-                    .reason(value.getReason())
-                    .description(value.getDescription())
-                    .build();
-        });
+        when(disputeCommandPort.openReturnDispute(any(ReturnDisputeCommand.class))).thenReturn(50L);
 
         var response = returnService.confirmReturn(
                 OWNER_ID,
@@ -257,15 +247,16 @@ class ReturnServiceTest {
                 new ReturnConfirmationRequest(true, "  모서리 파손  ", "  반납 시 파손을 확인했습니다.  ")
         );
 
-        ArgumentCaptor<Dispute> disputeCaptor = ArgumentCaptor.forClass(Dispute.class);
-        verify(disputeRepository).save(disputeCaptor.capture());
-        Dispute savedDispute = disputeCaptor.getValue();
+        ArgumentCaptor<ReturnDisputeCommand> disputeCaptor = ArgumentCaptor.forClass(ReturnDisputeCommand.class);
+        verify(disputeCommandPort).openReturnDispute(disputeCaptor.capture());
+        ReturnDisputeCommand command = disputeCaptor.getValue();
 
-        assertThat(savedDispute.getRentalId()).isEqualTo(RENTAL_ID);
-        assertThat(savedDispute.getReporterId()).isEqualTo(OWNER_ID);
-        assertThat(savedDispute.getRespondentId()).isEqualTo(RENTER_ID);
-        assertThat(savedDispute.getReason()).isEqualTo("모서리 파손");
-        assertThat(savedDispute.getDescription()).isEqualTo("반납 시 파손을 확인했습니다.");
+        assertThat(command.rentalId()).isEqualTo(RENTAL_ID);
+        assertThat(command.reporterId()).isEqualTo(OWNER_ID);
+        assertThat(command.respondentId()).isEqualTo(RENTER_ID);
+        // 공백 정리는 여전히 호출부 책임이다 — 포트는 받은 값을 그대로 저장한다.
+        assertThat(command.reason()).isEqualTo("모서리 파손");
+        assertThat(command.description()).isEqualTo("반납 시 파손을 확인했습니다.");
         assertThat(rental.getStatus()).isEqualTo(RentalStatus.DISPUTED);
         assertThat(response.status()).isEqualTo(RentalStatus.DISPUTED);
         assertThat(response.disputeId()).isEqualTo(50L);
@@ -286,7 +277,7 @@ class ReturnServiceTest {
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.FORBIDDEN);
 
-        verifyNoInteractions(receiptRepository, returnReceiptRepository, disputeRepository);
+        verifyNoInteractions(receiptRepository, returnReceiptRepository, disputeCommandPort);
         assertThat(rental.getStatus()).isEqualTo(RentalStatus.RETURNED);
     }
 
@@ -342,7 +333,7 @@ class ReturnServiceTest {
                 .isEqualTo(ErrorCode.RETURN_RECEIPT_NOT_FOUND);
 
         assertThat(rental.getStatus()).isEqualTo(RentalStatus.RETURNED);
-        verifyNoInteractions(disputeRepository);
+        verifyNoInteractions(disputeCommandPort);
     }
 
     private void stubComparisonData(Rental rental, Receipt receipt, ReturnReceipt returnReceipt) {

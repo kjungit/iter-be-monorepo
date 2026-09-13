@@ -10,8 +10,8 @@ import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.device.api.EquipmentInfo;
 import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.device.api.EquipmentThumbnailQueryPort;
-import com.example.iter.dispute.domain.entity.Dispute;
-import com.example.iter.dispute.domain.repository.DisputeRepository;
+import com.example.iter.dispute.api.DisputeCommandPort;
+import com.example.iter.dispute.api.ReturnDisputeCommand;
 import com.example.iter.reservation.domain.entity.*;
 import com.example.iter.reservation.domain.repository.*;
 import com.example.iter.reservation.dto.request.ReturnConfirmationRequest;
@@ -46,7 +46,7 @@ public class ReturnService {
     private final ReceiptImageRepository receiptImageRepository;
     private final ReturnReceiptRepository returnReceiptRepository;
     private final ReturnReceiptImageRepository returnReceiptImageRepository;
-    private final DisputeRepository disputeRepository;
+    private final DisputeCommandPort disputeCommandPort;
     private final ReturnMapper returnMapper;
 
     // 등록자가 최종 반납 확인을 해야 하는 거래 목록을 조회합니다.
@@ -117,18 +117,18 @@ public class ReturnService {
             return returnMapper.toConfirmation(rental, null);
         }
 
-        Dispute dispute = createReturnDispute(rental, ownerId, request);
+        Long disputeId = createReturnDispute(rental, ownerId, request);
 
         rental.openReturnDispute();
         log.info("대여 반납 분쟁 전환 처리: rentalId={}, ownerId={}, disputeId={}, status={}",
-                rentalId, ownerId, dispute.getId(), rental.getStatus());
+                rentalId, ownerId, disputeId, rental.getStatus());
 
         // 장비 상태는 변경하지 않습니다.
         // 장비 등록자가 이후 장비 관리 기능에서 직접 결정합니다.
 
         return returnMapper.toConfirmation(
                 rental,
-                dispute.getId()
+                disputeId
         );
     }
 
@@ -279,20 +279,19 @@ public class ReturnService {
     }
 
     // 비정상 반납에 대한 최소 분쟁을 생성합니다.
-    private Dispute createReturnDispute(
+    private Long createReturnDispute(
             Rental rental,
             Long ownerId,
             ReturnConfirmationRequest request
     ) {
-        return disputeRepository.save(
-                Dispute.builder()
-                        .rentalId(rental.getId())
-                        .reporterId(ownerId)
-                        .respondentId(rental.getRenterId())
-                        .reason(request.disputeReason().trim())
-                        .description(request.disputeDescription().trim())
-                        .build()
-        );
+        // 엔티티 조립은 dispute 가 한다. 여기서는 원시값만 넘긴다.
+        return disputeCommandPort.openReturnDispute(new ReturnDisputeCommand(
+                rental.getId(),
+                ownerId,
+                rental.getRenterId(),
+                request.disputeReason().trim(),
+                request.disputeDescription().trim()
+        ));
     }
 
     private void validateParty(Long userId, Rental rental, EquipmentInfo equipment) {
