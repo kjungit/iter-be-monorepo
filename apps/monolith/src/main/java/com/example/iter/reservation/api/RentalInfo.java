@@ -22,4 +22,8 @@ public record RentalInfo(
         Objects.requireNonNull(renterId, "renterId");
         // rejectReason 은 거절된 대여에만 있다 — 계약상 null 허용.
     }
+
+    public boolean isRenter(Long userId) {
+        return renterId.equals(userId);
+    }
 }

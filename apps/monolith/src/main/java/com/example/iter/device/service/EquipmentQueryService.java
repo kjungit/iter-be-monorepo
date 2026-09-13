@@ -29,7 +29,8 @@ import com.example.iter.device.dto.response.EquipmentScheduleResponse;
 import com.example.iter.device.dto.response.RentalScheduleItemResponse;
 import com.example.iter.device.support.EquipmentImageUrlResolver;
 import com.example.iter.reservation.domain.policy.RentalConflictPolicy;
-import com.example.iter.reservation.domain.repository.RentalRepository;
+import com.example.iter.reservation.api.RentalQueryPort;
+import com.example.iter.reservation.api.RentalScheduleItem;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -53,7 +54,7 @@ public class EquipmentQueryService {
     private final EquipmentRepository equipmentRepository;
     private final EquipmentImageRepository equipmentImageRepository;
     private final UserRepository userRepository;
-    private final RentalRepository rentalRepository;
+    private final RentalQueryPort rentalQueryPort;
     private final EquipmentImageUrlResolver imageUrlResolver;
 
     public EquipmentAvailabilityResponse getEquipmentAvailability(
@@ -151,12 +152,8 @@ public class EquipmentQueryService {
             return AvailabilityReason.OUT_OF_AVAILABLE_PERIOD;
         }
 
-        boolean conflict = rentalRepository.existsConflictingOccupyingRental(
-                equipment.getId(),
-                startDate,
-                endDate,
-                RentalConflictPolicy.nonOccupyingStatuses()
-        );
+        boolean conflict = rentalQueryPort.hasConflictingOccupyingRental(
+                equipment.getId(), startDate, endDate);
         return conflict ? AvailabilityReason.RESERVATION_CONFLICT : null;
     }
 
@@ -223,11 +220,9 @@ public class EquipmentQueryService {
                     ErrorCode.FORBIDDEN, "본인 소유 장비의 예약 일정만 조회할 수 있습니다.");
         }
 
-        List<RentalScheduleItemResponse> rentals = rentalRepository.findEquipmentSchedule(
-                        equipmentId,
-                        request.from(),
-                        request.to(),
-                        RentalConflictPolicy.nonScheduledStatuses())
+        // 일정에 표시하지 않는 상태(취소·거절 등)는 reservation 이 걸러서 준다.
+        List<RentalScheduleItemResponse> rentals = rentalQueryPort
+                .findSchedule(equipmentId, request.from(), request.to())
                 .stream()
                 .map(RentalScheduleItemResponse::from)
                 .toList();
