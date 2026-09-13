@@ -2,7 +2,7 @@ package com.example.iter.device.service;
 
 import com.example.iter.auth.domain.repository.UserRepository;
 import com.example.iter.common.security.Role;
-import com.example.iter.auth.domain.entity.User;
+import com.example.iter.common.security.AuthUser;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.device.domain.repository.EquipmentImageRepository;
@@ -211,7 +211,7 @@ public class EquipmentQueryService {
     }
 
     public EquipmentScheduleResponse getEquipmentSchedule(
-            User requester,
+            AuthUser requester,
             Long equipmentId,
             EquipmentScheduleRequest request
     ) {

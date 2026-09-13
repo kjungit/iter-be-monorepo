@@ -1,6 +1,6 @@
 package com.example.iter.device.service;
 
-import com.example.iter.auth.domain.entity.User;
+import com.example.iter.common.security.AuthUser;
 import com.example.iter.common.security.UserStatus;
 import com.example.iter.auth.domain.repository.UserRepository;
 import com.example.iter.common.exception.CustomException;
@@ -60,7 +60,7 @@ public class EquipmentManagementService {
 
     @Transactional
     public EquipmentDetailResponse create(
-            User owner,
+            AuthUser owner,
             EquipmentCreateRequest request
     ) {
         validateCanCreate(owner);
@@ -111,7 +111,7 @@ public class EquipmentManagementService {
 
     @Transactional
     public List<EquipmentImageResponse> addImages(
-            User owner,
+            AuthUser owner,
             Long equipmentId,
             EquipmentImageCreateRequest request
     ) {
@@ -259,7 +259,7 @@ public class EquipmentManagementService {
 
     @Transactional
     public EquipmentStatusResponse updateStatus(
-            User owner,
+            AuthUser owner,
             Long equipmentId,
             EquipmentStatusUpdateRequest request
     ) {
@@ -300,7 +300,7 @@ public class EquipmentManagementService {
         return equipment;
     }
 
-    private void validateCanCreate(User owner) {
+    private void validateCanCreate(AuthUser owner) {
         if (owner.getStatus() == UserStatus.SUSPENDED) {
             throw new CustomException(ErrorCode.USER_SUSPENDED);
         }
