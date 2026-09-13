@@ -163,6 +163,6 @@ class MyEquipmentApiTest {
     }
 
     private String bearer(User user) {
-        return "Bearer " + jwtTokenProvider.generateAccessToken(user);
+        return "Bearer " + jwtTokenProvider.generateAccessToken(user.toAuthUser());
     }
 }

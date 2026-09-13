@@ -1,6 +1,4 @@
 package com.example.iter.common.security;
-
-import com.example.iter.auth.domain.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtParser;
@@ -12,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-
 import javax.crypto.SecretKey;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -20,7 +17,6 @@ import java.time.ZoneId;
 import java.util.Base64;
 import java.util.Date;
 import java.util.UUID;
-
 // 토큰 생성/검증/해석을 전담하는 컴포넌트 (token 프로젝트의 TokenProvider와 동일한 설계를 따름)
 //
 // token 프로젝트와의 차이점 한 가지:
@@ -31,17 +27,13 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class JwtTokenProvider {
-
     private static final String CLAIM_ROLE = "role";
     private static final String CLAIM_TOKEN_TYPE = "tokenType";
     private static final String ACCESS_TOKEN_TYPE = "ACCESS";
     private static final String REFRESH_TOKEN_TYPE = "REFRESH";
-
     private final JwtProperties jwtProperties;
-
     private SecretKey secretKey;
     private JwtParser jwtParser;
-
     @PostConstruct
     private void init() {
         this.secretKey = Keys.hmacShaKeyFor(Base64.getDecoder().decode(jwtProperties.getSecretKey()));
@@ -51,19 +43,15 @@ public class JwtTokenProvider {
                 .requireAudience(jwtProperties.getAudience())
                 .build();
     }
-
-    public String generateAccessToken(User user) {
+    public String generateAccessToken(AuthUser user) {
         return generateToken(user, jwtProperties.getAccessTokenValidity(), ACCESS_TOKEN_TYPE);
     }
-
-    public String generateRefreshToken(User user) {
+    public String generateRefreshToken(AuthUser user) {
         return generateToken(user, jwtProperties.getRefreshTokenValidity(), REFRESH_TOKEN_TYPE);
     }
-
-    private String generateToken(User user, Duration validity, String tokenType) {
+    private String generateToken(AuthUser user, Duration validity, String tokenType) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + validity.toMillis());
-
         return Jwts.builder()
                 .header().type("JWT").and()
                 .issuer(jwtProperties.getIssuer())
@@ -77,15 +65,12 @@ public class JwtTokenProvider {
                 .signWith(secretKey, Jwts.SIG.HS512)
                 .compact();
     }
-
     public TokenStatus validateToken(String token) {
         return validateToken(token, ACCESS_TOKEN_TYPE);
     }
-
     public TokenStatus validateRefreshToken(String token) {
         return validateToken(token, REFRESH_TOKEN_TYPE);
     }
-
     private TokenStatus validateToken(String token, String expectedTokenType) {
         try {
             Claims claims = jwtParser.parseSignedClaims(token).getPayload();
@@ -101,20 +86,16 @@ public class JwtTokenProvider {
             return TokenStatus.INVALID;
         }
     }
-
     public Long getUserId(String token) {
         return Long.valueOf(getClaims(token).getSubject());
     }
-
     public LocalDateTime getExpiration(String token) {
         Date expiration = getClaims(token).getExpiration();
         return LocalDateTime.ofInstant(expiration.toInstant(), ZoneId.systemDefault());
     }
-
     private Claims getClaims(String token) {
         return jwtParser.parseSignedClaims(token).getPayload();
     }
-
     // 이미 조회해 둔 CustomUserDetails로 시큐리티 인증 객체를 만든다.
     public Authentication getAuthentication(CustomUserDetails principal) {
         return new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());

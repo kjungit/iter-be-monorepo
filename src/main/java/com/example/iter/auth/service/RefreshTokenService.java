@@ -34,7 +34,7 @@ public class RefreshTokenService {
             throw new IllegalArgumentException("저장되지 않은 회원에게 Refresh Token을 발급할 수 없습니다.");
         }
 
-        String rawRefreshToken = jwtTokenProvider.generateRefreshToken(user);
+        String rawRefreshToken = jwtTokenProvider.generateRefreshToken(user.toAuthUser());
         RefreshToken refreshToken = RefreshToken.builder()
                 .userId(user.getId())
                 .tokenHash(refreshTokenHasher.hash(rawRefreshToken))
@@ -73,7 +73,7 @@ public class RefreshTokenService {
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REFRESH_TOKEN));
         validateUserStatus(user);
 
-        String newRawRefreshToken = jwtTokenProvider.generateRefreshToken(user);
+        String newRawRefreshToken = jwtTokenProvider.generateRefreshToken(user.toAuthUser());
         RefreshToken replacementToken = RefreshToken.builder()
                 .userId(user.getId())
                 .tokenHash(refreshTokenHasher.hash(newRawRefreshToken))
@@ -88,7 +88,7 @@ public class RefreshTokenService {
         log.info("인증 토큰 재발급 처리: userId={}", user.getId());
 
         return new IssuedTokenPair(
-                jwtTokenProvider.generateAccessToken(user),
+                jwtTokenProvider.generateAccessToken(user.toAuthUser()),
                 newRawRefreshToken
         );
     }
