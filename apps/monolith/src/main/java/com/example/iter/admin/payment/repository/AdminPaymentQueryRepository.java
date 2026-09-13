@@ -1,9 +1,9 @@
-package com.example.iter.payment.domain.repository;
+package com.example.iter.admin.payment.repository;
 
 import com.example.iter.payment.domain.entity.Payment;
 import com.example.iter.payment.api.PaymentStatus;
-import com.example.iter.payment.service.model.AdminPaymentDetailRow;
-import com.example.iter.payment.service.model.AdminPaymentSummaryRow;
+import com.example.iter.admin.payment.model.AdminPaymentDetailRow;
+import com.example.iter.admin.payment.model.AdminPaymentSummaryRow;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
@@ -17,7 +17,7 @@ public interface AdminPaymentQueryRepository extends Repository<Payment, Long> {
 
     // 검색어가 없을 때 결제 목록에 필요한 행만 조인해 커서 다음 위치부터 조회합니다.
     @Query("""
-                    select new com.example.iter.payment.service.model.AdminPaymentSummaryRow(
+                    select new com.example.iter.admin.payment.model.AdminPaymentSummaryRow(
                         p.id, p.rentalId, p.orderId, r.renterId,
                         u.email, u.name, u.nickname,
                         r.productNameSnapshot,
@@ -50,7 +50,7 @@ public interface AdminPaymentQueryRepository extends Repository<Payment, Long> {
     // 결제, 대여, 대여자를 조인해 관리자 결제 목록에 필요한 데이터를 한 번에 조회합니다.
     // LOCATE를 사용하여 %, _ 등의 문자를 와일드카드가 아닌 실제 검색 문자로 처리합니다.
     @Query("""
-                    select new com.example.iter.payment.service.model.AdminPaymentSummaryRow(
+                    select new com.example.iter.admin.payment.model.AdminPaymentSummaryRow(
                         p.id, p.rentalId, p.orderId, r.renterId,
                         u.email, u.name, u.nickname,
                         r.productNameSnapshot,
@@ -91,7 +91,7 @@ public interface AdminPaymentQueryRepository extends Repository<Payment, Long> {
 
     // 결제 상세 응답에 필요한 결제, 대여, 대여자 필드만 한 번에 조회합니다.
     @Query("""
-            select new com.example.iter.payment.service.model.AdminPaymentDetailRow(
+            select new com.example.iter.admin.payment.model.AdminPaymentDetailRow(
                 p.id, p.rentalId, p.orderId, r.renterId,
                 u.email, u.name, u.nickname,
                 r.equipmentId, r.productNameSnapshot, r.categorySnapshot, r.dailyPriceSnapshot, r.startDate, r.endDate, r.rentalDays, r.totalPrice,

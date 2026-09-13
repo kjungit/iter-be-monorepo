@@ -1,4 +1,4 @@
-package com.example.iter.payment.controller.admin;
+package com.example.iter.admin.payment.controller;
 
 import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
@@ -11,10 +11,10 @@ import com.example.iter.common.security.CustomUserDetailsService;
 import com.example.iter.common.security.JwtTokenProvider;
 import com.example.iter.payment.api.PaymentStatus;
 import com.example.iter.payment.dto.request.AdminPaymentSearchRequest;
-import com.example.iter.payment.dto.response.AdminPaymentDetailResponse;
-import com.example.iter.payment.dto.response.AdminPaymentRentalResponse;
-import com.example.iter.payment.dto.response.AdminPaymentSummaryResponse;
-import com.example.iter.payment.service.AdminPaymentQueryService;
+import com.example.iter.admin.payment.dto.AdminPaymentDetailResponse;
+import com.example.iter.admin.payment.dto.AdminPaymentRentalResponse;
+import com.example.iter.admin.payment.dto.AdminPaymentSummaryResponse;
+import com.example.iter.admin.payment.service.AdminPaymentQueryService;
 import com.example.iter.reservation.api.RentalStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

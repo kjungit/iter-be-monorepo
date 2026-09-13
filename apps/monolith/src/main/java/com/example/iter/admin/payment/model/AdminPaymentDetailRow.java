@@ -1,12 +1,13 @@
-package com.example.iter.payment.dto.response;
+package com.example.iter.admin.payment.model;
 
 import com.example.iter.payment.api.PaymentStatus;
 import com.example.iter.reservation.api.RentalStatus;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-public record AdminPaymentSummaryResponse(
+public record AdminPaymentDetailRow(
         Long paymentId,
         Long rentalId,
         String orderId,
@@ -14,12 +15,20 @@ public record AdminPaymentSummaryResponse(
         String renterEmail,
         String renterName,
         String renterNickname,
+        Long equipmentId,
         String equipmentName,
+        String category,
+        BigDecimal dailyPrice,
+        LocalDate startDate,
+        LocalDate endDate,
+        Integer rentalDays,
+        BigDecimal totalPrice,
         BigDecimal amount,
         PaymentStatus paymentStatus,
         RentalStatus rentalStatus,
         LocalDateTime paidAt,
         LocalDateTime refundedAt,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {
 }

@@ -1,17 +1,17 @@
-package com.example.iter.payment.service;
+package com.example.iter.admin.payment.service;
 
 import com.example.iter.common.dto.response.CursorPageResponse;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.common.pagination.CursorCodec;
 import com.example.iter.common.pagination.CursorKey;
-import com.example.iter.payment.domain.repository.AdminPaymentQueryRepository;
+import com.example.iter.admin.payment.repository.AdminPaymentQueryRepository;
 import com.example.iter.payment.dto.request.AdminPaymentSearchRequest;
-import com.example.iter.payment.dto.response.AdminPaymentDetailResponse;
-import com.example.iter.payment.dto.response.AdminPaymentSummaryResponse;
-import com.example.iter.payment.service.model.AdminPaymentDetailRow;
-import com.example.iter.payment.service.model.AdminPaymentSummaryRow;
-import com.example.iter.payment.util.AdminPaymentMapper;
+import com.example.iter.admin.payment.dto.AdminPaymentDetailResponse;
+import com.example.iter.admin.payment.dto.AdminPaymentSummaryResponse;
+import com.example.iter.admin.payment.model.AdminPaymentDetailRow;
+import com.example.iter.admin.payment.model.AdminPaymentSummaryRow;
+import com.example.iter.admin.payment.util.AdminPaymentMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
