@@ -42,4 +42,10 @@ public interface UserQueryPort {
     //
     // !! 한 건씩 루프로 호출하지 말 것 !! N+1 이 된다. 목킹한 테스트는 그대로 통과한다.
     Map<Long, UserSummary> findSummaries(Collection<Long> userIds);
+
+    // 이 회원을 신고 대상으로 삼을 수 있는가. 없는 회원과 탈퇴 회원은 둘 다 false.
+    //
+    // 호출부에 UserStatus 를 노출하지 않으려고 상태를 돌려주지 않는다.
+    // 탈퇴 회원을 "없는 회원"과 같게 볼지는 auth 의 판단이다.
+    boolean isReportable(Long userId);
 }

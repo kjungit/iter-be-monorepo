@@ -2,7 +2,7 @@ package com.example.iter.device.service;
 
 import com.example.iter.common.security.AuthUser;
 import com.example.iter.common.security.UserStatus;
-import com.example.iter.auth.domain.repository.UserRepository;
+import com.example.iter.auth.api.UserQueryPort;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.device.domain.entity.Equipment;
@@ -50,7 +50,7 @@ public class EquipmentManagementService {
     private final EquipmentRepository equipmentRepository;
     private final EquipmentImageRepository equipmentImageRepository;
     private final EquipmentImageUploadRepository imageUploadRepository;
-    private final UserRepository userRepository;
+    private final UserQueryPort userQueryPort;
     private final RentalQueryPort rentalQueryPort;
     private final EquipmentImageStorage imageStorage;
     private final EquipmentImageCleanupService imageCleanupService;
@@ -354,7 +354,7 @@ public class EquipmentManagementService {
     private EquipmentDetailResponse toDetailResponse(Long equipmentId) {
         Equipment equipment = equipmentRepository.findById(equipmentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
-        var owner = userRepository.findSummaryById(equipment.getOwnerId())
+        var owner = userQueryPort.findSummary(equipment.getOwnerId())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         List<EquipmentImageResponse> images = equipmentImageRepository
                 .findByEquipmentIdOrderBySortOrderAscIdAsc(equipmentId)
