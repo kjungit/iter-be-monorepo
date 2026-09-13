@@ -1,7 +1,7 @@
 package com.example.iter.reservation.service;
 
 import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.domain.entity.UserStatus;
+import com.example.iter.common.security.UserStatus;
 import com.example.iter.auth.domain.repository.UserRepository;
 import com.example.iter.auth.dto.response.UserSummaryResponse;
 import com.example.iter.common.exception.CustomException;

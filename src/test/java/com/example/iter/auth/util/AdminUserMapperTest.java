@@ -1,8 +1,8 @@
 package com.example.iter.auth.util;
 
-import com.example.iter.auth.domain.entity.Role;
+import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.domain.entity.UserStatus;
+import com.example.iter.common.security.UserStatus;
 import com.example.iter.auth.dto.response.AdminUserDetailResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;

@@ -1,7 +1,7 @@
 package com.example.iter.auth.controller.api;
 
 import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.domain.entity.UserStatus;
+import com.example.iter.common.security.UserStatus;
 import com.example.iter.auth.domain.repository.RefreshTokenRepository;
 import com.example.iter.auth.domain.repository.UserRepository;
 import com.example.iter.auth.dto.request.LoginRequest;

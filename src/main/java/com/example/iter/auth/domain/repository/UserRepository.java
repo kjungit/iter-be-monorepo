@@ -2,7 +2,7 @@ package com.example.iter.auth.domain.repository;
 
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.auth.dto.response.UserSummaryResponse;
-import com.example.iter.auth.domain.entity.UserStatus;
+import com.example.iter.common.security.UserStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -1,6 +1,6 @@
 package com.example.iter.auth.dto.request;
 
-import com.example.iter.auth.domain.entity.UserStatus;
+import com.example.iter.common.security.UserStatus;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;

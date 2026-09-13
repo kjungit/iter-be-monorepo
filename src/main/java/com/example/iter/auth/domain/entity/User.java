@@ -1,6 +1,8 @@
 package com.example.iter.auth.domain.entity;
 
 import com.example.iter.common.entity.BaseTimeEntity;
+import com.example.iter.common.security.Role;
+import com.example.iter.common.security.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
 

@@ -1,4 +1,4 @@
-package com.example.iter.auth.domain.entity;
+package com.example.iter.common.security;
 
 public enum UserStatus {
     ACTIVE,     // 정상적으로 활동 가능한 회원

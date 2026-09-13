@@ -4,7 +4,7 @@ import com.example.iter.auth.domain.entity.RefreshToken;
 import com.example.iter.auth.domain.entity.OAuthAccount;
 import com.example.iter.auth.domain.entity.OAuthProvider;
 import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.domain.entity.UserStatus;
+import com.example.iter.common.security.UserStatus;
 import com.example.iter.auth.domain.repository.OAuthAccountRepository;
 import com.example.iter.auth.domain.repository.RefreshTokenRepository;
 import com.example.iter.auth.domain.repository.UserRepository;

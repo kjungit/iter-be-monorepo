@@ -1,4 +1,4 @@
-package com.example.iter.auth.domain.entity;
+package com.example.iter.common.security;
 
 public enum Role {
     USER,   // 일반 회원
