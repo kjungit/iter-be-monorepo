@@ -1,8 +1,7 @@
 package com.example.iter.dispute.service;
 
-import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
-import com.example.iter.auth.domain.repository.UserRepository;
+import com.example.iter.auth.api.UserQueryPort;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.device.domain.entity.Equipment;
@@ -36,7 +35,7 @@ class ReportTargetValidatorTest {
     private static final Long REPORTER_ID = 1L;
 
     @Mock
-    private UserRepository userRepository;
+    private UserQueryPort userQueryPort;
 
     @Mock
     private EquipmentQueryPort equipmentQueryPort;
@@ -58,12 +57,12 @@ class ReportTargetValidatorTest {
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.REPORT_SELF_TARGET_NOT_ALLOWED);
 
-        verifyNoInteractions(userRepository);
+        verifyNoInteractions(userQueryPort);
     }
 
     @Test
     void 존재하지_않거나_탈퇴한_회원은_신고할_수_없다() {
-        when(userRepository.findById(2L)).thenReturn(Optional.empty());
+        when(userQueryPort.isReportable(2L)).thenReturn(false);
 
         assertThatThrownBy(() -> reportTargetValidator.validate(
                 ReportTargetType.USER,
@@ -74,7 +73,7 @@ class ReportTargetValidatorTest {
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
-        when(userRepository.findById(3L)).thenReturn(Optional.of(user(3L, UserStatus.DELETED)));
+        when(userQueryPort.isReportable(3L)).thenReturn(false);
 
         assertThatThrownBy(() -> reportTargetValidator.validate(
                 ReportTargetType.USER,
@@ -88,7 +87,7 @@ class ReportTargetValidatorTest {
 
     @Test
     void 정지된_회원은_신고_대상으로_선택할_수_있다() {
-        when(userRepository.findById(2L)).thenReturn(Optional.of(user(2L, UserStatus.SUSPENDED)));
+        when(userQueryPort.isReportable(2L)).thenReturn(true);
 
         assertThatCode(() -> reportTargetValidator.validate(
                 ReportTargetType.USER,
@@ -197,15 +196,6 @@ class ReportTargetValidatorTest {
         verify(equipmentQueryPort, never()).find(10L);
     }
 
-    private User user(Long id, UserStatus status) {
-        return User.builder()
-                .id(id)
-                .email("user" + id + "@iter.test")
-                .password("encoded-password")
-                .name("회원" + id)
-                .status(status)
-                .build();
-    }
 
     private EquipmentInfo equipment(Long id, Long ownerId, EquipmentStatus status) {
         return new EquipmentInfo(

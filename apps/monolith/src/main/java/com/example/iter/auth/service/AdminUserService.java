@@ -18,7 +18,6 @@ import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.common.pagination.CursorCodec;
 import com.example.iter.common.pagination.CursorKey;
-import com.example.iter.device.domain.repository.EquipmentRepository;
 import com.example.iter.dispute.api.ReportQueryPort;
 import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.api.RentalQueryPort;
@@ -41,7 +40,6 @@ import java.util.Set;
 public class AdminUserService {
 
     private final UserRepository userRepository;
-    private final EquipmentRepository equipmentRepository;
     private final RentalQueryPort rentalQueryPort;
     private final ReportQueryPort reportQueryPort;
     private final AdminActionService adminActionService;
