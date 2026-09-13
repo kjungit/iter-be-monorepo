@@ -1,9 +1,9 @@
-package com.example.iter.common.audit.controller.admin;
+package com.example.iter.admin.action.controller;
 
-import com.example.iter.common.audit.controller.admin.spec.AdminActionApiSpec;
-import com.example.iter.common.audit.dto.request.AdminActionSearchRequest;
-import com.example.iter.common.audit.dto.response.AdminActionResponse;
-import com.example.iter.common.audit.service.AdminActionQueryService;
+import com.example.iter.admin.action.controller.spec.AdminActionApiSpec;
+import com.example.iter.admin.action.dto.request.AdminActionSearchRequest;
+import com.example.iter.admin.action.dto.response.AdminActionResponse;
+import com.example.iter.admin.action.service.AdminActionQueryService;
 import com.example.iter.common.dto.response.CursorPageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

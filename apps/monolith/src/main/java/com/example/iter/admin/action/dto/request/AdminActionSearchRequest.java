@@ -1,4 +1,4 @@
-package com.example.iter.common.audit.dto.request;
+package com.example.iter.admin.action.dto.request;
 
 import com.example.iter.common.audit.domain.entity.AdminActionTargetType;
 import com.example.iter.common.audit.domain.entity.AdminActionType;

@@ -1,4 +1,4 @@
-package com.example.iter.common.audit.dto.request;
+package com.example.iter.admin.action.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

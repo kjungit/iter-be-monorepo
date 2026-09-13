@@ -1,12 +1,12 @@
-package com.example.iter.common.audit.service;
+package com.example.iter.admin.action.service;
 
 import com.example.iter.common.audit.domain.entity.AdminAction;
 import com.example.iter.common.audit.domain.entity.AdminActionTargetType;
 import com.example.iter.common.audit.domain.entity.AdminActionType;
 import com.example.iter.common.audit.domain.repository.AdminActionRepository;
-import com.example.iter.common.audit.dto.request.AdminActionSearchRequest;
-import com.example.iter.common.audit.dto.response.AdminActionResponse;
-import com.example.iter.common.audit.util.AdminActionMapper;
+import com.example.iter.admin.action.dto.request.AdminActionSearchRequest;
+import com.example.iter.admin.action.dto.response.AdminActionResponse;
+import com.example.iter.admin.action.util.AdminActionMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
