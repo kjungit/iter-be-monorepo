@@ -2,8 +2,9 @@ package com.example.iter.reservation.service;
 
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
+import com.example.iter.auth.api.UserLockPort;
+import com.example.iter.auth.api.UserLockView;
 import com.example.iter.auth.api.UserQueryPort;
-import com.example.iter.auth.domain.repository.UserRepository;
 import com.example.iter.auth.api.UserSummary;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
@@ -56,10 +57,10 @@ class RentalServiceTest {
     @Mock
     private EquipmentRepository equipmentRepository;
     @Mock
-    private UserRepository userRepository;
+    private UserQueryPort userQueryPort;
 
     @Mock
-    private UserQueryPort userQueryPort;
+    private UserLockPort userLockPort;
     @Mock
     private PaymentRepository paymentRepository;
     @Mock
@@ -304,20 +305,13 @@ class RentalServiceTest {
                 .isEqualTo(ErrorCode.RESERVATION_CONFLICT);
     }
 
+    // 잠그는 순서는 어댑터의 책임이라 여기서는 두 회원의 상태만 돌려준다.
     private void mockParticipants(UserStatus renterStatus, UserStatus ownerStatus) {
-        when(userRepository.findWithLockById(2L))
-                .thenReturn(Optional.of(user(2L, renterStatus)));
-        when(userRepository.findWithLockById(99L))
-                .thenReturn(Optional.of(user(99L, ownerStatus)));
-    }
-
-    private User user(Long id, UserStatus status) {
-        return User.builder()
-                .id(id)
-                .email("user-" + id + "@example.com")
-                .name("테스트 회원")
-                .status(status)
-                .build();
+        when(userLockPort.lockAll(List.of(2L, 99L)))
+                .thenReturn(Map.of(
+                        2L, new UserLockView(2L, renterStatus),
+                        99L, new UserLockView(99L, ownerStatus)
+                ));
     }
 
     @Test
