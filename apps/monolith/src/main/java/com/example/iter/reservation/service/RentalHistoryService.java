@@ -6,10 +6,10 @@ import com.example.iter.common.dto.request.PagingRequest;
 import com.example.iter.common.dto.response.PageResponse;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
-import com.example.iter.device.domain.entity.Equipment;
+import com.example.iter.device.api.EquipmentInfo;
+import com.example.iter.device.api.EquipmentQueryPort;
+import com.example.iter.device.api.EquipmentThumbnailQueryPort;
 import com.example.iter.device.domain.entity.EquipmentImage;
-import com.example.iter.device.domain.repository.EquipmentImageRepository;
-import com.example.iter.device.domain.repository.EquipmentRepository;
 import com.example.iter.reservation.domain.entity.Rental;
 import com.example.iter.reservation.domain.repository.RentalHistoryRepository;
 import com.example.iter.reservation.domain.repository.spec.RentalSpecifications;
@@ -39,8 +39,8 @@ import java.util.stream.Collectors;
 public class RentalHistoryService {
 
     private final RentalHistoryRepository rentalHistoryRepository;
-    private final EquipmentRepository equipmentRepository;
-    private final EquipmentImageRepository equipmentImageRepository;
+    private final EquipmentQueryPort equipmentQueryPort;
+    private final EquipmentThumbnailQueryPort equipmentThumbnailQueryPort;
     private final UserQueryPort userQueryPort;
     private final RentalHistoryMapper rentalHistoryMapper;
 
@@ -106,19 +106,18 @@ public class RentalHistoryService {
         }
 
         Set<Long> equipmentIds = rentals.getContent().stream().map(Rental::getEquipmentId).collect(Collectors.toSet());
-        Map<Long, Equipment> equipmentMap = equipmentRepository.findAllById(equipmentIds).stream()
-                .collect(Collectors.toMap(Equipment::getId, Function.identity()));
+        Map<Long, EquipmentInfo> equipmentMap = equipmentQueryPort.findAll(equipmentIds);
 
         Set<Long> ownerIds = rentals.getContent().stream()
-                .map(rental -> getEquipment(equipmentMap, rental.getEquipmentId()).getOwnerId())
+                .map(rental -> getEquipment(equipmentMap, rental.getEquipmentId()).ownerId())
                 .collect(Collectors.toSet());
 
         Map<Long, UserSummary> userMap = userQueryPort.findSummaries(ownerIds);
         Map<Long, String> thumbnailMap = loadThumbnails(equipmentIds);
 
         List<RentalHistoryResponse> responses = rentals.getContent().stream().map(rental -> {
-                Equipment equipment = getEquipment(equipmentMap, rental.getEquipmentId());
-                UserSummary owner = getUser(userMap, equipment.getOwnerId());
+                EquipmentInfo equipment = getEquipment(equipmentMap, rental.getEquipmentId());
+                UserSummary owner = getUser(userMap, equipment.ownerId());
 
                 return rentalHistoryMapper.toResponse(
                         rental,
@@ -154,19 +153,11 @@ public class RentalHistoryService {
     }
 
     private Map<Long, String> loadThumbnails(Collection<Long> equipmentIds) {
-        Map<Long, String> thumbnailMap = new LinkedHashMap<>();
-
-        equipmentImageRepository.findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(equipmentIds)
-                .forEach(image -> thumbnailMap.putIfAbsent(
-                        image.getEquipment().getId(),
-                        image.getImageUrl()
-                ));
-
-        return thumbnailMap;
+        return equipmentThumbnailQueryPort.findThumbnailUrls(equipmentIds);
     }
 
-    private Equipment getEquipment(Map<Long, Equipment> equipmentMap, Long equipmentId) {
-        Equipment equipment = equipmentMap.get(equipmentId);
+    private EquipmentInfo getEquipment(Map<Long, EquipmentInfo> equipmentMap, Long equipmentId) {
+        EquipmentInfo equipment = equipmentMap.get(equipmentId);
 
         if (equipment == null) {
             throw new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND);

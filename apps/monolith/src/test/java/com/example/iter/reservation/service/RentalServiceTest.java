@@ -12,6 +12,8 @@ import com.example.iter.device.domain.entity.Equipment;
 import com.example.iter.device.domain.entity.EquipmentCategory;
 import com.example.iter.device.domain.entity.EquipmentStatus;
 import com.example.iter.device.domain.entity.ProductConditionType;
+import com.example.iter.device.api.EquipmentInfo;
+import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.device.domain.repository.EquipmentRepository;
 import com.example.iter.payment.domain.repository.PaymentRepository;
 import com.example.iter.payment.domain.entity.PaymentStatus;
@@ -56,6 +58,9 @@ class RentalServiceTest {
     private RentalRepository rentalRepository;
     @Mock
     private EquipmentRepository equipmentRepository;
+
+    @Mock
+    private EquipmentQueryPort equipmentQueryPort;
     @Mock
     private UserQueryPort userQueryPort;
 
@@ -71,6 +76,14 @@ class RentalServiceTest {
 
     private Equipment equipment(Long ownerId) {
         return equipment(ownerId, EquipmentStatus.ACTIVE);
+    }
+
+    // 락을 쓰지 않는 조회 경로는 포트로 옮겨져 값 객체를 돌려준다.
+    private EquipmentInfo equipmentInfo(Long ownerId) {
+        return new EquipmentInfo(
+                1L, ownerId, "소니 A7C2", EquipmentCategory.CAMERA.name(),
+                BigDecimal.valueOf(30000), true, false
+        );
     }
 
     private Equipment equipment(Long ownerId, EquipmentStatus status) {
@@ -332,7 +345,7 @@ class RentalServiceTest {
     @Test
     void 권한이_없으면_거절할_수_없다() {
         when(rentalRepository.findWithLockById(10L)).thenReturn(Optional.of(rental(10L, RentalStatus.REQUESTED)));
-        when(equipmentRepository.findById(1L)).thenReturn(Optional.of(equipment(99L)));
+        when(equipmentQueryPort.find(1L)).thenReturn(Optional.of(equipmentInfo(99L)));
 
         assertThatThrownBy(() -> rentalService.rejectRental(10L, 2L, false, "사유"))
                 .isInstanceOf(CustomException.class)
@@ -343,7 +356,7 @@ class RentalServiceTest {
     @Test
     void 이미_처리된_요청은_다시_거절할_수_없다() {
         when(rentalRepository.findWithLockById(10L)).thenReturn(Optional.of(rental(10L, RentalStatus.REJECTED)));
-        when(equipmentRepository.findById(1L)).thenReturn(Optional.of(equipment(99L)));
+        when(equipmentQueryPort.find(1L)).thenReturn(Optional.of(equipmentInfo(99L)));
 
         assertThatThrownBy(() -> rentalService.rejectRental(10L, 99L, false, "사유"))
                 .isInstanceOf(CustomException.class)
@@ -355,7 +368,7 @@ class RentalServiceTest {
     void 정상_거절시_상태와_사유가_저장된다() {
         Rental target = rental(10L, RentalStatus.REQUESTED);
         when(rentalRepository.findWithLockById(10L)).thenReturn(Optional.of(target));
-        when(equipmentRepository.findById(1L)).thenReturn(Optional.of(equipment(99L)));
+        when(equipmentQueryPort.find(1L)).thenReturn(Optional.of(equipmentInfo(99L)));
 
         var response = rentalService.rejectRental(10L, 99L, false, "일정이 겹칩니다.");
 

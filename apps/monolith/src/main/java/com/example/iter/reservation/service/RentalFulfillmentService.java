@@ -6,8 +6,8 @@ import com.example.iter.delivery.domain.entity.Shipping;
 import com.example.iter.delivery.domain.entity.ShippingStatus;
 import com.example.iter.delivery.domain.entity.ShippingType;
 import com.example.iter.delivery.domain.repository.ShippingRepository;
-import com.example.iter.device.domain.entity.Equipment;
-import com.example.iter.device.domain.repository.EquipmentRepository;
+import com.example.iter.device.api.EquipmentInfo;
+import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.reservation.domain.entity.*;
 import com.example.iter.reservation.domain.repository.*;
 import com.example.iter.reservation.dto.request.ReceiptCreateRequest;
@@ -42,7 +42,7 @@ import java.util.stream.IntStream;
 public class RentalFulfillmentService {
 
     private final RentalRepository rentalRepository;
-    private final EquipmentRepository equipmentRepository;
+    private final EquipmentQueryPort equipmentQueryPort;
     private final ShippingRepository shippingRepository;
     private final ReceiptRepository receiptRepository;
     private final ReceiptImageRepository receiptImageRepository;
@@ -54,7 +54,7 @@ public class RentalFulfillmentService {
     // mock 배송이라 실제 택배사 연동/배송 추적이 없다 — 등록 즉시 배송완료로 기록한다.
     public ShippingRegisterResponse registerShipping(Long ownerId, Long rentalId, ShippingRegisterRequest request) {
         Rental rental = findRental(rentalId);
-        Equipment equipment = findEquipment(rental.getEquipmentId());
+        EquipmentInfo equipment = findEquipment(rental.getEquipmentId());
         validateOwner(ownerId, equipment);
 
         if (rental.getStatus() != RentalStatus.APPROVED) {
@@ -184,12 +184,12 @@ public class RentalFulfillmentService {
                 .orElseThrow(() -> new CustomException(ErrorCode.RENTAL_NOT_FOUND));
     }
 
-    private Equipment findEquipment(Long equipmentId) {
-        return equipmentRepository.findById(equipmentId)
+    private EquipmentInfo findEquipment(Long equipmentId) {
+        return equipmentQueryPort.find(equipmentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
     }
 
-    private void validateOwner(Long ownerId, Equipment equipment) {
+    private void validateOwner(Long ownerId, EquipmentInfo equipment) {
         if (!equipment.isOwnedBy(ownerId)) {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
