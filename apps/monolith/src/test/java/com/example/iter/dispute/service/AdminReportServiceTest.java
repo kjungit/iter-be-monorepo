@@ -1,7 +1,7 @@
 package com.example.iter.dispute.service;
 
-import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.domain.repository.UserRepository;
+import com.example.iter.auth.api.UserQueryPort;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.common.audit.domain.entity.AdminActionTargetType;
 import com.example.iter.common.audit.domain.entity.AdminActionType;
 import com.example.iter.common.audit.service.AdminActionService;
@@ -29,6 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -51,7 +52,7 @@ class AdminReportServiceTest {
     private ReportRepository reportRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private UserQueryPort userQueryPort;
 
     @Mock
     private AdminActionService adminActionService;
@@ -66,7 +67,7 @@ class AdminReportServiceTest {
     void 신고_목록을_조건과_최신순으로_조회하고_신고자를_일괄_조회한다() {
         Report first = report(10L, ReportStatus.RECEIVED);
         Report second = report(11L, ReportStatus.RECEIVED);
-        User reporter = reporter();
+        UserSummary reporter = reporter();
         ReportSummaryResponse firstResponse = summary(10L);
         ReportSummaryResponse secondResponse = summary(11L);
         AdminReportSearchRequest request = new AdminReportSearchRequest(
@@ -83,14 +84,14 @@ class AdminReportServiceTest {
                 eq(null),
                 any(Pageable.class)
         )).thenReturn(List.of(first, second));
-        when(userRepository.findAllById(List.of(REPORTER_ID))).thenReturn(List.of(reporter));
+        when(userQueryPort.findSummaries(List.of(REPORTER_ID))).thenReturn(Map.of(REPORTER_ID, reporter));
         when(adminReportMapper.toSummary(first, reporter)).thenReturn(firstResponse);
         when(adminReportMapper.toSummary(second, reporter)).thenReturn(secondResponse);
 
         CursorPageResponse<ReportSummaryResponse> result = adminReportService.getReports(request);
 
         assertThat(result.content()).containsExactly(firstResponse, secondResponse);
-        verify(userRepository).findAllById(List.of(REPORTER_ID));
+        verify(userQueryPort).findSummaries(List.of(REPORTER_ID));
 
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
         verify(reportRepository).searchForAdminByCursor(
@@ -114,7 +115,7 @@ class AdminReportServiceTest {
         CursorPageResponse<ReportSummaryResponse> result = adminReportService.getReports(request);
 
         assertThat(result.content()).isEmpty();
-        verify(userRepository, never()).findAllById(any());
+        verify(userQueryPort, never()).findSummaries(any());
         verify(adminReportMapper, never()).toSummary(any(), any());
     }
 
@@ -125,7 +126,7 @@ class AdminReportServiceTest {
         when(reportRepository.searchForAdminByCursor(
                 eq(null), eq(null), eq(null), eq(null), any(Pageable.class)
         )).thenReturn(List.of(report));
-        when(userRepository.findAllById(List.of(REPORTER_ID))).thenReturn(List.of());
+        when(userQueryPort.findSummaries(List.of(REPORTER_ID))).thenReturn(Map.of());
 
         assertThatThrownBy(() -> adminReportService.getReports(request))
                 .isInstanceOfSatisfying(
@@ -139,10 +140,10 @@ class AdminReportServiceTest {
     @Test
     void 신고_상세를_조회한다() {
         Report report = report(REPORT_ID, ReportStatus.RECEIVED);
-        User reporter = reporter();
+        UserSummary reporter = reporter();
         AdminReportDetailResponse expected = org.mockito.Mockito.mock(AdminReportDetailResponse.class);
         when(reportRepository.findById(REPORT_ID)).thenReturn(Optional.of(report));
-        when(userRepository.findById(REPORTER_ID)).thenReturn(Optional.of(reporter));
+        when(userQueryPort.findSummary(REPORTER_ID)).thenReturn(Optional.of(reporter));
         when(adminReportMapper.toDetail(report, reporter)).thenReturn(expected);
 
         assertThat(adminReportService.getReport(REPORT_ID)).isSameAs(expected);
@@ -158,7 +159,7 @@ class AdminReportServiceTest {
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.REPORT_NOT_FOUND)
                 );
 
-        verify(userRepository, never()).findById(any());
+        verify(userQueryPort, never()).findSummary(any());
     }
 
     @ParameterizedTest
@@ -169,11 +170,11 @@ class AdminReportServiceTest {
             AdminActionType expectedAction
     ) {
         Report report = report(REPORT_ID, currentStatus);
-        User reporter = reporter();
+        UserSummary reporter = reporter();
         AdminReportUpdateRequest request = new AdminReportUpdateRequest(requestedStatus, "  처리 메모  ");
         AdminReportDetailResponse expected = org.mockito.Mockito.mock(AdminReportDetailResponse.class);
         when(reportRepository.findWithLockById(REPORT_ID)).thenReturn(Optional.of(report));
-        when(userRepository.findById(REPORTER_ID)).thenReturn(Optional.of(reporter));
+        when(userQueryPort.findSummary(REPORTER_ID)).thenReturn(Optional.of(reporter));
         when(adminReportMapper.toDetail(report, reporter)).thenReturn(expected);
 
         AdminReportDetailResponse result = adminReportService.updateReportStatus(
@@ -274,14 +275,8 @@ class AdminReportServiceTest {
                 .build();
     }
 
-    private User reporter() {
-        return User.builder()
-                .id(REPORTER_ID)
-                .email("reporter@iter.test")
-                .password("encoded-password")
-                .name("신고자")
-                .nickname("신고자")
-                .build();
+    private UserSummary reporter() {
+        return new UserSummary(REPORTER_ID, "신고자");
     }
 
     private ReportSummaryResponse summary(Long reportId) {

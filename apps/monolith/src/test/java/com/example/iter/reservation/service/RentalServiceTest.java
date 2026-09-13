@@ -2,8 +2,9 @@ package com.example.iter.reservation.service;
 
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
+import com.example.iter.auth.api.UserQueryPort;
 import com.example.iter.auth.domain.repository.UserRepository;
-import com.example.iter.auth.dto.response.UserSummaryResponse;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.device.domain.entity.Equipment;
@@ -36,6 +37,7 @@ import org.springframework.data.domain.Sort;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -55,6 +57,9 @@ class RentalServiceTest {
     private EquipmentRepository equipmentRepository;
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private UserQueryPort userQueryPort;
     @Mock
     private PaymentRepository paymentRepository;
     @Mock
@@ -115,10 +120,10 @@ class RentalServiceTest {
         );
         when(rentalRepository.findReceivedRentals(99L, null, expectedPageable))
                 .thenReturn(new PageImpl<>(List.of(first, second), expectedPageable, 2));
-        when(userRepository.findSummariesByIdIn(List.of(2L, 3L)))
-                .thenReturn(List.of(
-                        new UserSummaryResponse(2L, "대여자2"),
-                        new UserSummaryResponse(3L, "대여자3")
+        when(userQueryPort.findSummaries(List.of(2L, 3L)))
+                .thenReturn(Map.of(
+                        2L, new UserSummary(2L, "대여자2"),
+                        3L, new UserSummary(3L, "대여자3")
                 ));
         when(paymentRepository.findStatusesByRentalIdIn(List.of(10L, 11L)))
                 .thenReturn(List.of(new RentalPaymentStatusRow(10L, PaymentStatus.PAID)));
@@ -131,9 +136,9 @@ class RentalServiceTest {
         assertThat(response.content().get(1).renter().nickName()).isEqualTo("대여자3");
         assertThat(response.content().get(1).paymentStatus()).isNull();
         assertThat(response.totalElements()).isEqualTo(2);
-        verify(userRepository).findSummariesByIdIn(List.of(2L, 3L));
+        verify(userQueryPort).findSummaries(List.of(2L, 3L));
         verify(paymentRepository).findStatusesByRentalIdIn(List.of(10L, 11L));
-        verify(userRepository, never()).findSummaryById(anyLong());
+        verify(userQueryPort, never()).findSummary(anyLong());
         verify(paymentRepository, never()).findByRentalId(11L);
     }
 
@@ -142,7 +147,7 @@ class RentalServiceTest {
         Rental target = rental(10L, 2L, RentalStatus.REQUESTED);
         when(rentalRepository.findReceivedRentals(anyLong(), any(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(target)));
-        when(userRepository.findSummariesByIdIn(List.of(2L))).thenReturn(List.of());
+        when(userQueryPort.findSummaries(List.of(2L))).thenReturn(Map.of());
         when(paymentRepository.findStatusesByRentalIdIn(List.of(10L))).thenReturn(List.of());
 
         assertThatThrownBy(() -> rentalService.getReceivedRentals(99L, null, 0, 20))
@@ -160,7 +165,7 @@ class RentalServiceTest {
 
         assertThat(response.content()).isEmpty();
         assertThat(response.totalElements()).isZero();
-        verify(userRepository, never()).findSummariesByIdIn(any());
+        verify(userQueryPort, never()).findSummaries(any());
         verify(paymentRepository, never()).findStatusesByRentalIdIn(any());
     }
 

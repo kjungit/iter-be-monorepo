@@ -1,7 +1,7 @@
 package com.example.iter.dispute.controller.api;
 
 import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.dto.response.UserSummaryResponse;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.config.RestApiSecurityTestConfig;
 import com.example.iter.common.dto.response.PageResponse;
 import com.example.iter.common.exception.CustomException;
@@ -112,7 +112,7 @@ class ReportApiControllerTest {
     void 내_신고_목록을_검색_조건과_페이지로_조회한다() throws Exception {
         ReportSummaryResponse summary = new ReportSummaryResponse(
                 10L,
-                new UserSummaryResponse(USER_ID, "신고자닉네임"),
+                new UserSummary(USER_ID, "신고자닉네임"),
                 ReportTargetType.EQUIPMENT,
                 100L,
                 "허위 정보",
@@ -229,7 +229,7 @@ class ReportApiControllerTest {
     private ReportDetailResponse detailResponse(Long reportId, ReportStatus status) {
         return new ReportDetailResponse(
                 reportId,
-                new UserSummaryResponse(USER_ID, "신고자닉네임"),
+                new UserSummary(USER_ID, "신고자닉네임"),
                 ReportTargetType.EQUIPMENT,
                 100L,
                 "허위 정보",

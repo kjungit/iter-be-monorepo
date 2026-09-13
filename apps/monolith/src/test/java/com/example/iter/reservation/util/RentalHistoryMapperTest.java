@@ -1,5 +1,6 @@
 package com.example.iter.reservation.util;
 
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
@@ -31,15 +32,7 @@ class RentalHistoryMapperTest {
                 .totalPrice(BigDecimal.valueOf(150_000))
                 .status(RentalStatus.RETURNING)
                 .build();
-        User counterparty = User.builder()
-                .id(2L)
-                .email("owner@iter.test")
-                .password("encoded-password")
-                .name("장비 등록자")
-                .nickname("등록자닉네임")
-                .role(Role.USER)
-                .status(UserStatus.ACTIVE)
-                .build();
+        UserSummary counterparty = new UserSummary(2L, "등록자닉네임");
 
         var response = rentalHistoryMapper.toResponse(
                 rental,
@@ -75,13 +68,7 @@ class RentalHistoryMapperTest {
                 .totalPrice(BigDecimal.valueOf(10_000))
                 .status(RentalStatus.COMPLETED)
                 .build();
-        User counterparty = User.builder()
-                .id(3L)
-                .email("renter@iter.test")
-                .password("encoded-password")
-                .name("대여자")
-                .nickname("대여자닉네임")
-                .build();
+        UserSummary counterparty = new UserSummary(3L, "대여자닉네임");
 
         var response = rentalHistoryMapper.toResponse(rental, counterparty, null, 0);
 

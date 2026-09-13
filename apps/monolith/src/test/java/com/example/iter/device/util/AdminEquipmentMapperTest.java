@@ -1,5 +1,6 @@
 package com.example.iter.device.util;
 
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
@@ -25,7 +26,7 @@ class AdminEquipmentMapperTest {
     @Test
     void 장비와_등록자와_썸네일을_목록_응답으로_변환한다() {
         Equipment equipment = equipment();
-        User owner = owner();
+        UserSummary owner = owner();
 
         var response = adminEquipmentMapper.toSummary(
                 equipment,
@@ -47,7 +48,7 @@ class AdminEquipmentMapperTest {
     @Test
     void 장비와_등록자와_이미지를_상세_응답으로_변환한다() {
         Equipment equipment = equipment();
-        User owner = owner();
+        UserSummary owner = owner();
         EquipmentImage image = EquipmentImage.builder()
                 .id(100L)
                 .equipment(equipment)
@@ -102,16 +103,8 @@ class AdminEquipmentMapperTest {
         return equipment;
     }
 
-    private User owner() {
-        return User.builder()
-                .id(2L)
-                .email("owner@iter.test")
-                .password("encoded-password")
-                .name("장비 등록자")
-                .nickname("등록자")
-                .phone("010-0000-0002")
-                .role(Role.USER)
-                .status(UserStatus.ACTIVE)
-                .build();
+    private UserSummary owner() {
+        return new UserSummary(2L, "등록자");
     }
+
 }
