@@ -4,7 +4,9 @@ on:
   push:
     branches: [main, dev]
   pull_request:
-    branches: [main, dev]
+    # 모노레포 전환은 통합 브랜치(feat/**)에 작업 브랜치(monorepo/**)를 스택으로 쌓는 방식이라,
+    # base가 main/dev가 아니다. 이 패턴이 없으면 전환 작업 PR 전체에 CI가 돌지 않는다.
+    branches: [main, dev, 'feat/**', 'monorepo/**']
 
 jobs:
   build:
@@ -30,11 +32,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '25'
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
