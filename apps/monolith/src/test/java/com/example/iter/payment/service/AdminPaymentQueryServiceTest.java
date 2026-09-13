@@ -4,7 +4,7 @@ import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.common.pagination.CursorCodec;
 import com.example.iter.common.pagination.CursorKey;
-import com.example.iter.payment.domain.entity.PaymentStatus;
+import com.example.iter.payment.api.PaymentStatus;
 import com.example.iter.payment.domain.repository.AdminPaymentQueryRepository;
 import com.example.iter.payment.dto.request.AdminPaymentSearchRequest;
 import com.example.iter.payment.service.model.AdminPaymentDetailRow;

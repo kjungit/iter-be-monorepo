@@ -15,8 +15,9 @@ import com.example.iter.device.domain.entity.ProductConditionType;
 import com.example.iter.device.api.EquipmentInfo;
 import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.device.api.EquipmentLockPort;
-import com.example.iter.payment.domain.repository.PaymentRepository;
-import com.example.iter.payment.domain.entity.PaymentStatus;
+import com.example.iter.payment.api.PaymentCommandPort;
+import com.example.iter.payment.api.PaymentQueryPort;
+import com.example.iter.payment.api.PaymentStatus;
 import com.example.iter.payment.service.model.RentalPaymentStatusRow;
 import com.example.iter.reservation.domain.entity.Rental;
 import com.example.iter.reservation.api.RentalStatus;
@@ -46,6 +47,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -67,7 +69,10 @@ class RentalServiceTest {
     @Mock
     private UserLockPort userLockPort;
     @Mock
-    private PaymentRepository paymentRepository;
+    private PaymentQueryPort paymentQueryPort;
+
+    @Mock
+    private PaymentCommandPort paymentCommandPort;
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
@@ -143,8 +148,8 @@ class RentalServiceTest {
                         2L, new UserSummary(2L, "대여자2"),
                         3L, new UserSummary(3L, "대여자3")
                 ));
-        when(paymentRepository.findStatusesByRentalIdIn(List.of(10L, 11L)))
-                .thenReturn(List.of(new RentalPaymentStatusRow(10L, PaymentStatus.PAID)));
+        when(paymentQueryPort.findStatusesByRentalIds(List.of(10L, 11L)))
+                .thenReturn(Map.of(10L, PaymentStatus.PAID));
 
         var response = rentalService.getReceivedRentals(99L, null, 0, 20);
 
@@ -155,9 +160,9 @@ class RentalServiceTest {
         assertThat(response.content().get(1).paymentStatus()).isNull();
         assertThat(response.totalElements()).isEqualTo(2);
         verify(userQueryPort).findSummaries(List.of(2L, 3L));
-        verify(paymentRepository).findStatusesByRentalIdIn(List.of(10L, 11L));
+        verify(paymentQueryPort).findStatusesByRentalIds(List.of(10L, 11L));
         verify(userQueryPort, never()).findSummary(anyLong());
-        verify(paymentRepository, never()).findByRentalId(11L);
+        verify(paymentQueryPort, never()).findStatusByRentalId(11L);
     }
 
     @Test
@@ -166,7 +171,7 @@ class RentalServiceTest {
         when(rentalRepository.findReceivedRentals(anyLong(), any(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(target)));
         when(userQueryPort.findSummaries(List.of(2L))).thenReturn(Map.of());
-        when(paymentRepository.findStatusesByRentalIdIn(List.of(10L))).thenReturn(List.of());
+        when(paymentQueryPort.findStatusesByRentalIds(List.of(10L))).thenReturn(Map.of());
 
         assertThatThrownBy(() -> rentalService.getReceivedRentals(99L, null, 0, 20))
                 .isInstanceOf(CustomException.class)
@@ -184,7 +189,7 @@ class RentalServiceTest {
         assertThat(response.content()).isEmpty();
         assertThat(response.totalElements()).isZero();
         verify(userQueryPort, never()).findSummaries(any());
-        verify(paymentRepository, never()).findStatusesByRentalIdIn(any());
+        verify(paymentQueryPort, never()).findStatusesByRentalIds(any());
     }
 
     @Test
@@ -386,7 +391,7 @@ class RentalServiceTest {
         // owner는 REQUESTED(결제 완료) 시점에야 이 요청을 처음 알게 되므로,
         // 그 이후 취소는 owner가 이미 아는 요청에 대한 취소라 알림 대상이다.
         when(rentalRepository.findWithLockById(10L)).thenReturn(Optional.of(rental(10L, RentalStatus.REQUESTED)));
-        when(paymentRepository.findByRentalId(10L)).thenReturn(Optional.empty());
+        when(paymentCommandPort.cancelIfPaid(eq(10L), any())).thenReturn(Optional.empty());
 
         var response = rentalService.cancelRental(10L, 2L, false);
 
@@ -398,7 +403,7 @@ class RentalServiceTest {
     void PENDING_상태에서_취소하면_취소_이벤트를_발행하지_않는다() {
         // owner는 결제 전(PENDING) 요청의 존재를 아직 모르므로, 취소 알림을 보내면 안 된다.
         when(rentalRepository.findWithLockById(10L)).thenReturn(Optional.of(rental(10L, RentalStatus.PENDING)));
-        when(paymentRepository.findByRentalId(10L)).thenReturn(Optional.empty());
+        when(paymentCommandPort.cancelIfPaid(eq(10L), any())).thenReturn(Optional.empty());
 
         var response = rentalService.cancelRental(10L, 2L, false);
 

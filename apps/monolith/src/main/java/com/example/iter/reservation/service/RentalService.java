@@ -13,9 +13,9 @@ import com.example.iter.device.api.EquipmentLockPort;
 import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.payment.client.TossApiException;
 import com.example.iter.payment.client.TossPaymentClient;
-import com.example.iter.payment.domain.entity.Payment;
-import com.example.iter.payment.domain.entity.PaymentStatus;
-import com.example.iter.payment.domain.repository.PaymentRepository;
+import com.example.iter.payment.api.PaymentStatus;
+import com.example.iter.payment.api.PaymentCommandPort;
+import com.example.iter.payment.api.PaymentQueryPort;
 import com.example.iter.payment.service.model.RentalPaymentStatusRow;
 import com.example.iter.reservation.domain.entity.Rental;
 import com.example.iter.reservation.api.RentalStatus;
@@ -64,7 +64,8 @@ public class RentalService {
     private final EquipmentLockPort equipmentLockPort;
     private final UserQueryPort userQueryPort;
     private final UserLockPort userLockPort;
-    private final PaymentRepository paymentRepository;
+    private final PaymentQueryPort paymentQueryPort;
+    private final PaymentCommandPort paymentCommandPort;
     private final TossPaymentClient tossPaymentClient;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -153,9 +154,7 @@ public class RentalService {
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         UserSummary owner = userQueryPort.findSummary(equipment.ownerId())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        PaymentStatus paymentStatus = paymentRepository.findByRentalId(rentalId)
-                .map(Payment::getStatus)
-                .orElse(null);
+        PaymentStatus paymentStatus = paymentQueryPort.findStatusByRentalId(rentalId).orElse(null);
 
         return RentalDetailResponse.of(rental, renter, owner, paymentStatus, overdueDays(rental));
     }
@@ -213,11 +212,7 @@ public class RentalService {
                 .map(Rental::getId)
                 .toList();
 
-        return paymentRepository.findStatusesByRentalIdIn(rentalIds).stream()
-                .collect(Collectors.toMap(
-                        RentalPaymentStatusRow::rentalId,
-                        RentalPaymentStatusRow::paymentStatus
-                ));
+        return paymentQueryPort.findStatusesByRentalIds(rentalIds);
     }
 
     @Transactional
@@ -235,17 +230,14 @@ public class RentalService {
         // "취소했습니다" 알림을 보내면 존재도 몰랐던 요청에 대한 뜬금없는 알림이 된다.
         boolean ownerWasNotified = rental.getStatus() == RentalStatus.REQUESTED;
 
-        Payment payment = paymentRepository.findByRentalId(rentalId).orElse(null);
-        if (payment != null && payment.getStatus() == PaymentStatus.PAID) {
-            cancelTossPayment(payment, "대여 취소");
-        }
+        // 토스 취소 호출·멱등키·환불 기록은 전부 payment 가 한다. 여기서는 결과 상태만 받는다.
+        PaymentStatus paymentStatus = paymentCommandPort.cancelIfPaid(rentalId, "대여 취소").orElse(null);
 
         rental.changeStatus(RentalStatus.CANCELED);
         if (ownerWasNotified) {
             eventPublisher.publishEvent(new RentalCanceledEvent(rental.getId()));
         }
 
-        PaymentStatus paymentStatus = payment != null? payment.getStatus(): null;
         log.info("대여 취소 처리: rentalId={}, actorId={}, actorType={}, status={}, paymentStatus={}",
                 rentalId, currentUserId, isAdmin ? "ADMIN" : "USER", rental.getStatus(), paymentStatus);
 
@@ -306,12 +298,9 @@ public class RentalService {
             throw new CustomException(ErrorCode.RENTAL_ALREADY_PROCESSED);
         }
 
-        rejectAndRefund(rental, reason);
+        // 환불 "후" 상태를 그대로 쓴다. 다시 조회하면 쿼리가 늘 뿐 결과는 같다.
+        PaymentStatus paymentStatus = rejectAndRefund(rental, reason);
         eventPublisher.publishEvent(new RentalRejectedEvent(rental.getId()));
-
-        PaymentStatus paymentStatus = paymentRepository.findByRentalId(rentalId)
-                .map(Payment::getStatus)
-                .orElse(null);
         log.info("대여 거절 처리: rentalId={}, actorId={}, actorType={}, status={}, paymentStatus={}",
                 rentalId, currentUserId, isAdmin ? "ADMIN" : "USER", rental.getStatus(), paymentStatus);
         return RentalRejectResponse.of(rental, paymentStatus);
@@ -324,24 +313,12 @@ public class RentalService {
         return rentalRepository.expirePendingRentals(LocalDateTime.now().minusMinutes(30));
     }
 
-    // 결제 완료건이면 환불하고 예약을 REJECTED로 전환
-    private void rejectAndRefund(Rental rental, String reason) {
-        Payment payment = paymentRepository.findByRentalId(rental.getId()).orElse(null);
-        if (payment != null && payment.getStatus() == PaymentStatus.PAID) {
-            cancelTossPayment(payment, reason);
-        }
+    // 결제 완료건이면 환불하고 예약을 REJECTED 로 전환. 환불 후 상태를 돌려준다.
+    // 토스 취소 실패는 payment 쪽에서 예외로 전파되어 예약도 거절 처리되지 않는다.
+    private PaymentStatus rejectAndRefund(Rental rental, String reason) {
+        PaymentStatus paymentStatus = paymentCommandPort.cancelIfPaid(rental.getId(), reason).orElse(null);
         rental.reject(reason);
-    }
-
-    // 실제 토스 결제 취소 요청 — 실패하면 예약도 취소/거절 처리하지 않도록 예외를 그대로 전파한다
-    // (토스 취소가 안 됐는데 우리 쪽만 취소 처리하면 돈과 상태가 어긋난다).
-    private void cancelTossPayment(Payment payment, String reason) {
-        try {
-            tossPaymentClient.cancel(payment.getPaymentKey(), reason, payment.ensureCancelIdempotencyKey());
-            payment.markRefunded();
-        } catch (TossApiException e) {
-            throw new CustomException(ErrorCode.TOSS_PAYMENT_FAILED);
-        }
+        return paymentStatus;
     }
 
     private Rental getRentalOrThrow(Long rentalId) {

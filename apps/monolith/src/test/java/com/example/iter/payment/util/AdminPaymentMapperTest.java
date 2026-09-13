@@ -1,6 +1,6 @@
 package com.example.iter.payment.util;
 
-import com.example.iter.payment.domain.entity.PaymentStatus;
+import com.example.iter.payment.api.PaymentStatus;
 import com.example.iter.payment.service.model.AdminPaymentDetailRow;
 import com.example.iter.payment.service.model.AdminPaymentSummaryRow;
 import com.example.iter.reservation.api.RentalStatus;

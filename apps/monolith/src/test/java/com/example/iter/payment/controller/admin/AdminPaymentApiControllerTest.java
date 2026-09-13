@@ -9,7 +9,7 @@ import com.example.iter.common.exception.GlobalExceptionHandler;
 import com.example.iter.common.security.CustomUserDetails;
 import com.example.iter.common.security.CustomUserDetailsService;
 import com.example.iter.common.security.JwtTokenProvider;
-import com.example.iter.payment.domain.entity.PaymentStatus;
+import com.example.iter.payment.api.PaymentStatus;
 import com.example.iter.payment.dto.request.AdminPaymentSearchRequest;
 import com.example.iter.payment.dto.response.AdminPaymentDetailResponse;
 import com.example.iter.payment.dto.response.AdminPaymentRentalResponse;

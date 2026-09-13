@@ -2,12 +2,12 @@ package com.example.iter.payment.service;
 
 import com.example.iter.payment.client.TossPaymentClient;
 import com.example.iter.payment.domain.entity.Payment;
-import com.example.iter.payment.domain.entity.PaymentStatus;
+import com.example.iter.payment.api.PaymentStatus;
 import com.example.iter.payment.domain.repository.PaymentRepository;
 import com.example.iter.payment.dto.toss.TossConfirmApiResponse;
 import com.example.iter.payment.dto.toss.TossWebhookPayload;
 import com.example.iter.reservation.api.RentalStatus;
-import com.example.iter.reservation.domain.repository.RentalRepository;
+import com.example.iter.reservation.api.RentalCommandPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TossWebhookService {
 
     private final PaymentRepository paymentRepository;
-    private final RentalRepository rentalRepository;
+    private final RentalCommandPort rentalCommandPort;
     private final TossPaymentClient tossPaymentClient;
 
     @Transactional
@@ -54,8 +54,8 @@ public class TossWebhookService {
 
         // confirm() 응답보다 웹훅이 먼저 도착하는 경우를 대비한 방어적 반영
         payment.markPaid(verified.paymentKey(), verified.approvedAtAsLocalDateTime());
-        rentalRepository.findById(payment.getRentalId())
-                .ifPresent(rental -> rental.changeStatus(RentalStatus.REQUESTED));
+        // 대여가 없으면 조용히 넘어간다 — 예외를 던지면 500 이 나가고 토스가 재시도한다.
+        rentalCommandPort.markPaymentConfirmed(payment.getRentalId());
         log.info("토스 웹훅 결제 상태 반영 처리: paymentId={}, rentalId={}, status={}",
                 payment.getId(), payment.getRentalId(), payment.getStatus());
     }
