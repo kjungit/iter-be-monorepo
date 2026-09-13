@@ -14,7 +14,7 @@ import com.example.iter.device.domain.entity.EquipmentStatus;
 import com.example.iter.device.domain.entity.ProductConditionType;
 import com.example.iter.device.api.EquipmentInfo;
 import com.example.iter.device.api.EquipmentQueryPort;
-import com.example.iter.device.domain.repository.EquipmentRepository;
+import com.example.iter.device.api.EquipmentLockPort;
 import com.example.iter.payment.domain.repository.PaymentRepository;
 import com.example.iter.payment.domain.entity.PaymentStatus;
 import com.example.iter.payment.service.model.RentalPaymentStatusRow;
@@ -57,10 +57,10 @@ class RentalServiceTest {
     @Mock
     private RentalRepository rentalRepository;
     @Mock
-    private EquipmentRepository equipmentRepository;
+    private EquipmentQueryPort equipmentQueryPort;
 
     @Mock
-    private EquipmentQueryPort equipmentQueryPort;
+    private EquipmentLockPort equipmentLockPort;
     @Mock
     private UserQueryPort userQueryPort;
 
@@ -80,9 +80,13 @@ class RentalServiceTest {
 
     // 락을 쓰지 않는 조회 경로는 포트로 옮겨져 값 객체를 돌려준다.
     private EquipmentInfo equipmentInfo(Long ownerId) {
+        return equipmentInfo(ownerId, true, false);
+    }
+
+    private EquipmentInfo equipmentInfo(Long ownerId, boolean active, boolean deleted) {
         return new EquipmentInfo(
                 1L, ownerId, "소니 A7C2", EquipmentCategory.CAMERA.name(),
-                BigDecimal.valueOf(30000), true, false
+                BigDecimal.valueOf(30000), active, deleted
         );
     }
 
@@ -185,9 +189,9 @@ class RentalServiceTest {
 
     @Test
     void 대여_요청_생성시_일수와_총액을_계산한다() {
-        when(equipmentRepository.findById(1L)).thenReturn(Optional.of(equipment(99L)));
+        when(equipmentQueryPort.find(1L)).thenReturn(Optional.of(equipmentInfo(99L)));
         mockParticipants(UserStatus.ACTIVE, UserStatus.ACTIVE);
-        when(equipmentRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(equipment(99L)));
+        when(equipmentLockPort.lockForUpdate(1L)).thenReturn(Optional.of(equipmentInfo(99L)));
         when(rentalRepository.findConflictingOccupyingRentalsForUpdate(anyLong(), any(), any(), any()))
                 .thenReturn(List.of());
         when(rentalRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -200,7 +204,7 @@ class RentalServiceTest {
 
     @Test
     void 본인_장비는_대여할_수_없다() {
-        when(equipmentRepository.findById(1L)).thenReturn(Optional.of(equipment(2L)));
+        when(equipmentQueryPort.find(1L)).thenReturn(Optional.of(equipmentInfo(2L)));
 
         assertThatThrownBy(() -> rentalService.createRental(2L, request()))
                 .isInstanceOf(CustomException.class)
@@ -210,7 +214,7 @@ class RentalServiceTest {
 
     @Test
     void ACTIVE_상태가_아닌_장비는_대여할_수_없다() {
-        when(equipmentRepository.findById(1L)).thenReturn(Optional.of(equipment(99L, EquipmentStatus.MAINTENANCE)));
+        when(equipmentQueryPort.find(1L)).thenReturn(Optional.of(equipmentInfo(99L, false, false)));
 
         assertThatThrownBy(() -> rentalService.createRental(2L, request()))
                 .isInstanceOf(CustomException.class)
@@ -220,7 +224,7 @@ class RentalServiceTest {
 
     @Test
     void 시작일이_오늘이거나_과거면_요청할_수_없다() {
-        when(equipmentRepository.findById(1L)).thenReturn(Optional.of(equipment(99L)));
+        when(equipmentQueryPort.find(1L)).thenReturn(Optional.of(equipmentInfo(99L)));
         RentalCreateRequest todayRequest = new RentalCreateRequest(1L,
                 LocalDate.now(), LocalDate.now().plusDays(5),
                 "홍길동", "010-0000-0000", "12345", "서울시", "101동", "문 앞", true);
@@ -233,9 +237,9 @@ class RentalServiceTest {
 
     @Test
     void 겹치는_예약이_있으면_요청할_수_없다() {
-        when(equipmentRepository.findById(1L)).thenReturn(Optional.of(equipment(99L)));
+        when(equipmentQueryPort.find(1L)).thenReturn(Optional.of(equipmentInfo(99L)));
         mockParticipants(UserStatus.ACTIVE, UserStatus.ACTIVE);
-        when(equipmentRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(equipment(99L)));
+        when(equipmentLockPort.lockForUpdate(1L)).thenReturn(Optional.of(equipmentInfo(99L)));
         when(rentalRepository.findConflictingOccupyingRentalsForUpdate(anyLong(), any(), any(), any()))
                 .thenReturn(List.of(rental(20L, RentalStatus.RENTING)));
 
@@ -247,7 +251,7 @@ class RentalServiceTest {
 
     @Test
     void 정지된_회원은_새로운_대여를_요청할_수_없다() {
-        when(equipmentRepository.findById(1L)).thenReturn(Optional.of(equipment(99L)));
+        when(equipmentQueryPort.find(1L)).thenReturn(Optional.of(equipmentInfo(99L)));
         mockParticipants(UserStatus.SUSPENDED, UserStatus.ACTIVE);
 
         assertThatThrownBy(() -> rentalService.createRental(2L, request()))
@@ -258,7 +262,7 @@ class RentalServiceTest {
 
     @Test
     void 탈퇴한_소유자의_장비에는_새로운_대여를_요청할_수_없다() {
-        when(equipmentRepository.findById(1L)).thenReturn(Optional.of(equipment(99L)));
+        when(equipmentQueryPort.find(1L)).thenReturn(Optional.of(equipmentInfo(99L)));
         mockParticipants(UserStatus.ACTIVE, UserStatus.DELETED);
 
         assertThatThrownBy(() -> rentalService.createRental(2L, request()))
@@ -270,7 +274,7 @@ class RentalServiceTest {
     @Test
     void 장비_소유자가_아니면_승인할_수_없다() {
         when(rentalRepository.findWithLockById(10L)).thenReturn(Optional.of(rental(10L, RentalStatus.REQUESTED)));
-        when(equipmentRepository.findById(1L)).thenReturn(Optional.of(equipment(99L)));
+        when(equipmentQueryPort.find(1L)).thenReturn(Optional.of(equipmentInfo(99L)));
 
         assertThatThrownBy(() -> rentalService.approveRental(10L, 2L, false))
                 .isInstanceOf(CustomException.class)
@@ -283,7 +287,7 @@ class RentalServiceTest {
     @Test
     void REQUESTED_상태가_아니면_승인할_수_없다() {
         when(rentalRepository.findWithLockById(10L)).thenReturn(Optional.of(rental(10L, RentalStatus.APPROVED)));
-        when(equipmentRepository.findById(1L)).thenReturn(Optional.of(equipment(99L)));
+        when(equipmentQueryPort.find(1L)).thenReturn(Optional.of(equipmentInfo(99L)));
 
         assertThatThrownBy(() -> rentalService.approveRental(10L, 99L, false))
                 .isInstanceOf(CustomException.class)
@@ -294,9 +298,9 @@ class RentalServiceTest {
     @Test
     void 승인_시점에_장비가_비활성_상태면_승인할_수_없다() {
         when(rentalRepository.findWithLockById(10L)).thenReturn(Optional.of(rental(10L, RentalStatus.REQUESTED)));
-        when(equipmentRepository.findById(1L)).thenReturn(Optional.of(equipment(99L)));
-        when(equipmentRepository.findByIdForUpdate(1L))
-                .thenReturn(Optional.of(equipment(99L, EquipmentStatus.SUSPENDED)));
+        when(equipmentQueryPort.find(1L)).thenReturn(Optional.of(equipmentInfo(99L)));
+        when(equipmentLockPort.lockForUpdate(1L))
+                .thenReturn(Optional.of(equipmentInfo(99L, false, false)));
 
         assertThatThrownBy(() -> rentalService.approveRental(10L, 99L, false))
                 .isInstanceOf(CustomException.class)
@@ -307,8 +311,8 @@ class RentalServiceTest {
     @Test
     void 이미_확정된_예약과_겹치면_RESERVATION_CONFLICT를_던진다() {
         when(rentalRepository.findWithLockById(10L)).thenReturn(Optional.of(rental(10L, RentalStatus.REQUESTED)));
-        when(equipmentRepository.findById(1L)).thenReturn(Optional.of(equipment(99L)));
-        when(equipmentRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(equipment(99L)));
+        when(equipmentQueryPort.find(1L)).thenReturn(Optional.of(equipmentInfo(99L)));
+        when(equipmentLockPort.lockForUpdate(1L)).thenReturn(Optional.of(equipmentInfo(99L)));
         when(rentalRepository.findConflictingOccupyingRentalsForUpdate(anyLong(), any(), any(), any()))
                 .thenReturn(List.of(rental(20L, RentalStatus.RENTING)));
 
@@ -331,8 +335,8 @@ class RentalServiceTest {
     void 충돌이_없으면_승인된다() {
         Rental target = rental(10L, RentalStatus.REQUESTED);
         when(rentalRepository.findWithLockById(10L)).thenReturn(Optional.of(target));
-        when(equipmentRepository.findById(1L)).thenReturn(Optional.of(equipment(99L)));
-        when(equipmentRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(equipment(99L)));
+        when(equipmentQueryPort.find(1L)).thenReturn(Optional.of(equipmentInfo(99L)));
+        when(equipmentLockPort.lockForUpdate(1L)).thenReturn(Optional.of(equipmentInfo(99L)));
         when(rentalRepository.findConflictingOccupyingRentalsForUpdate(anyLong(), any(), any(), any()))
                 .thenReturn(List.of());
 

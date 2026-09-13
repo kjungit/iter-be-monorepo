@@ -54,7 +54,8 @@ public class JpaEquipmentQueryAdapter implements EquipmentQueryPort {
 
     // EquipmentStatus 를 불리언 두 개로 낮추는 지점. 이 판단이 device 안에 있어야
     // 상태가 늘어날 때 다른 도메인이 영향을 받지 않는다.
-    private static EquipmentInfo toInfo(Equipment equipment) {
+    // 같은 매핑을 JpaEquipmentCommandAdapter 도 쓴다 (락으로 조회한 엔티티 -> 값 객체).
+    static EquipmentInfo toInfo(Equipment equipment) {
         return new EquipmentInfo(
                 equipment.getId(),
                 equipment.getOwnerId(),
