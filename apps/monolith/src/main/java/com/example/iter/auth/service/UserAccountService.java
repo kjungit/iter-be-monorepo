@@ -8,8 +8,7 @@ import com.example.iter.auth.dto.request.UserUpdateRequest;
 import com.example.iter.auth.dto.response.UserResponse;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
-import com.example.iter.device.domain.entity.EquipmentStatus;
-import com.example.iter.device.domain.repository.EquipmentRepository;
+import com.example.iter.device.api.EquipmentCommandPort;
 import com.example.iter.reservation.domain.policy.RentalStatusPolicy;
 import com.example.iter.reservation.domain.repository.RentalRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +26,7 @@ public class UserAccountService {
 
     private final UserRepository userRepository;
     private final RentalRepository rentalRepository;
-    private final EquipmentRepository equipmentRepository;
+    private final EquipmentCommandPort equipmentCommandPort;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenService refreshTokenService;
 
@@ -79,7 +78,8 @@ public class UserAccountService {
         }
 
         LocalDateTime withdrawnAt = LocalDateTime.now();
-        equipmentRepository.updateStatusByOwnerId(userId, EquipmentStatus.DELETED, withdrawnAt);
+        // user.withdraw() 보다 먼저 호출한다 — 순서를 바꾸면 벌크 UPDATE 의 flush 시점이 달라진다.
+        equipmentCommandPort.deactivateAllOwnedBy(userId, withdrawnAt);
         user.withdraw(withdrawnAt);
         refreshTokenService.revokeAllByUserId(userId);
         log.info("회원 탈퇴 처리: userId={}", userId);
