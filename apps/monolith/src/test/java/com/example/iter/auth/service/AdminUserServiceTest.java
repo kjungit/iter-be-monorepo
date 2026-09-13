@@ -15,8 +15,7 @@ import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.common.pagination.CursorCodec;
 import com.example.iter.common.pagination.CursorKey;
 import com.example.iter.device.domain.repository.EquipmentRepository;
-import com.example.iter.dispute.domain.entity.ReportTargetType;
-import com.example.iter.dispute.domain.repository.ReportRepository;
+import com.example.iter.dispute.api.ReportQueryPort;
 import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.api.RentalQueryPort;
 import com.example.iter.reservation.api.UserRentalStats;
@@ -61,7 +60,7 @@ class AdminUserServiceTest {
     private RentalQueryPort rentalQueryPort;
 
     @Mock
-    private ReportRepository reportRepository;
+    private ReportQueryPort reportQueryPort;
 
     @Mock
     private AdminActionService adminActionService;
@@ -131,7 +130,7 @@ class AdminUserServiceTest {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(rentalQueryPort.countUserRentalStats(eq(USER_ID), any(LocalDate.class)))
                 .thenReturn(new UserRentalStats(3L, 4L, 2L));
-        when(reportRepository.countByTargetTypeAndTargetId(ReportTargetType.USER, USER_ID))
+        when(reportQueryPort.countAgainstUser(USER_ID))
                 .thenReturn(5L);
 
         var response = adminUserService.getUser(USER_ID);
@@ -156,7 +155,7 @@ class AdminUserServiceTest {
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
-        verifyNoInteractions(rentalQueryPort, reportRepository, adminUserMapper);
+        verifyNoInteractions(rentalQueryPort, reportQueryPort, adminUserMapper);
     }
 
     @Test
