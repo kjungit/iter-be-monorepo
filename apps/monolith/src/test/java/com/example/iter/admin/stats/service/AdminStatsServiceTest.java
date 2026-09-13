@@ -1,11 +1,10 @@
 package com.example.iter.admin.stats.service;
 
-import com.example.iter.auth.domain.repository.UserRepository;
 import com.example.iter.admin.stats.dto.response.AdminStatsResponse;
-import com.example.iter.device.domain.repository.EquipmentRepository;
-import com.example.iter.dispute.domain.entity.ReportStatus;
-import com.example.iter.dispute.domain.repository.ReportRepository;
-import com.example.iter.payment.domain.repository.PaymentRepository;
+import com.example.iter.auth.api.UserQueryPort;
+import com.example.iter.device.api.EquipmentQueryPort;
+import com.example.iter.dispute.api.ReportQueryPort;
+import com.example.iter.payment.api.PaymentQueryPort;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -13,7 +12,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -21,46 +19,51 @@ import static org.mockito.Mockito.when;
 class AdminStatsServiceTest {
 
     @Mock
-    private UserRepository userRepository;
+    private UserQueryPort userQueryPort;
 
     @Mock
-    private EquipmentRepository equipmentRepository;
+    private EquipmentQueryPort equipmentQueryPort;
 
     @Mock
-    private ReportRepository reportRepository;
+    private ReportQueryPort reportQueryPort;
 
     @Mock
-    private PaymentRepository paymentRepository;
+    private PaymentQueryPort paymentQueryPort;
 
     @InjectMocks
     private AdminStatsService adminStatsService;
 
     @Test
-    void 회원_장비_접수된_신고_결제_건수를_각각_집계한다() {
-        when(userRepository.count()).thenReturn(120L);
-        when(equipmentRepository.count()).thenReturn(45L);
-        when(reportRepository.countByStatus(ReportStatus.RECEIVED)).thenReturn(3L);
-        when(paymentRepository.count()).thenReturn(300L);
+    void 회원_장비_미처리_신고_결제_건수를_각_도메인_포트에서_집계한다() {
+        when(userQueryPort.count()).thenReturn(120L);
+        when(equipmentQueryPort.count()).thenReturn(45L);
+        when(reportQueryPort.countReceived()).thenReturn(3L);
+        when(paymentQueryPort.count()).thenReturn(300L);
 
         AdminStatsResponse result = adminStatsService.getStats();
 
         assertThat(result).isEqualTo(AdminStatsResponse.of(120L, 45L, 3L, 300L));
 
-        verify(userRepository).count();
-        verify(equipmentRepository).count();
-        verify(reportRepository).countByStatus(ReportStatus.RECEIVED);
-        verify(paymentRepository).count();
+        verify(userQueryPort).count();
+        verify(equipmentQueryPort).count();
+        verify(reportQueryPort).countReceived();
+        verify(paymentQueryPort).count();
     }
 
     @Test
-    void 접수_상태가_아닌_신고는_접수된_신고_건수에_포함하지_않는다() {
-        when(reportRepository.countByStatus(ReportStatus.RECEIVED)).thenReturn(7L);
+    void 각_건수를_담당_도메인_포트에_각각_묻는다() {
+        when(userQueryPort.count()).thenReturn(1L);
+        when(equipmentQueryPort.count()).thenReturn(2L);
+        when(reportQueryPort.countReceived()).thenReturn(3L);
+        when(paymentQueryPort.count()).thenReturn(4L);
 
-        adminStatsService.getStats();
+        AdminStatsResponse result = adminStatsService.getStats();
 
-        verify(reportRepository).countByStatus(ReportStatus.RECEIVED);
-        verify(reportRepository, never()).countByStatus(ReportStatus.UNDER_REVIEW);
-        verify(reportRepository, never()).countByStatus(ReportStatus.RESOLVED);
-        verify(reportRepository, never()).countByStatus(ReportStatus.REJECTED);
+        // 인자 순서가 뒤바뀌면 컴파일은 되지만 대시보드 숫자가 서로 바뀐다.
+        // 네 값을 서로 다르게 주어 자리를 고정한다.
+        assertThat(result.userCount()).isEqualTo(1L);
+        assertThat(result.equipmentCount()).isEqualTo(2L);
+        assertThat(result.unresolvedReportCount()).isEqualTo(3L);
+        assertThat(result.paymentCount()).isEqualTo(4L);
     }
 }
