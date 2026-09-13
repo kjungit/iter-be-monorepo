@@ -1,7 +1,7 @@
 package com.example.iter.auth.controller.api;
 
 import com.example.iter.auth.controller.api.spec.OAuth2AuthApiSpec;
-import com.example.iter.auth.domain.entity.PreferredLanguage;
+import com.example.iter.auth.api.PreferredLanguage;
 import com.example.iter.auth.dto.request.KakaoSignUpRequest;
 import com.example.iter.auth.dto.response.AccessTokenResponse;
 import com.example.iter.auth.service.OAuth2AuthService;

@@ -1,4 +1,4 @@
-package com.example.iter.auth.domain.entity;
+package com.example.iter.auth.api;
 
 import org.junit.jupiter.api.Test;
 
