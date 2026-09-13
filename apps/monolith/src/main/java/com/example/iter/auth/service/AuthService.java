@@ -1,6 +1,6 @@
 package com.example.iter.auth.service;
 
-import com.example.iter.auth.domain.entity.PreferredLanguage;
+import com.example.iter.auth.api.PreferredLanguage;
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
 import com.example.iter.auth.domain.repository.UserRepository;

@@ -1,6 +1,6 @@
 package com.example.iter.notification.service;
 
-import com.example.iter.auth.domain.entity.PreferredLanguage;
+import com.example.iter.auth.api.PreferredLanguage;
 
 import java.util.Map;
 

@@ -1,6 +1,6 @@
 package com.example.iter.notification.service;
 
-import com.example.iter.auth.domain.entity.PreferredLanguage;
+import com.example.iter.auth.api.PreferredLanguage;
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.auth.domain.repository.UserRepository;
 import com.example.iter.device.domain.entity.Equipment;

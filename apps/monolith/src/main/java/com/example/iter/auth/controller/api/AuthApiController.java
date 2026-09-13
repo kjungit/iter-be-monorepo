@@ -1,7 +1,7 @@
 package com.example.iter.auth.controller.api;
 
 import com.example.iter.auth.controller.api.spec.AuthApiSpec;
-import com.example.iter.auth.domain.entity.PreferredLanguage;
+import com.example.iter.auth.api.PreferredLanguage;
 import com.example.iter.auth.dto.request.LoginRequest;
 import com.example.iter.auth.dto.request.SignUpRequest;
 import com.example.iter.auth.dto.response.AccessTokenResponse;
