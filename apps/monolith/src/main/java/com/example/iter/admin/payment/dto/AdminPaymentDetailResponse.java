@@ -1,4 +1,4 @@
-package com.example.iter.payment.dto.response;
+package com.example.iter.admin.payment.dto;
 
 import java.time.LocalDateTime;
 

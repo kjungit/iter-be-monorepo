@@ -1,11 +1,11 @@
-package com.example.iter.payment.controller.admin;
+package com.example.iter.admin.payment.controller;
 
 import com.example.iter.common.dto.response.CursorPageResponse;
-import com.example.iter.payment.controller.admin.spec.AdminPaymentApiSpec;
+import com.example.iter.admin.payment.controller.spec.AdminPaymentApiSpec;
 import com.example.iter.payment.dto.request.AdminPaymentSearchRequest;
-import com.example.iter.payment.dto.response.AdminPaymentDetailResponse;
-import com.example.iter.payment.dto.response.AdminPaymentSummaryResponse;
-import com.example.iter.payment.service.AdminPaymentQueryService;
+import com.example.iter.admin.payment.dto.AdminPaymentDetailResponse;
+import com.example.iter.admin.payment.dto.AdminPaymentSummaryResponse;
+import com.example.iter.admin.payment.service.AdminPaymentQueryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

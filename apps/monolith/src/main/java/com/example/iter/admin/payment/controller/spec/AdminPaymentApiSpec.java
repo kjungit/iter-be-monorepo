@@ -1,9 +1,9 @@
-package com.example.iter.payment.controller.admin.spec;
+package com.example.iter.admin.payment.controller.spec;
 
 import com.example.iter.common.dto.response.CursorPageResponse;
 import com.example.iter.payment.dto.request.AdminPaymentSearchRequest;
-import com.example.iter.payment.dto.response.AdminPaymentDetailResponse;
-import com.example.iter.payment.dto.response.AdminPaymentSummaryResponse;
+import com.example.iter.admin.payment.dto.AdminPaymentDetailResponse;
+import com.example.iter.admin.payment.dto.AdminPaymentSummaryResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;

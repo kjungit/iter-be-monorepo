@@ -1,8 +1,8 @@
-package com.example.iter.payment.util;
+package com.example.iter.admin.payment.util;
 
 import com.example.iter.payment.api.PaymentStatus;
-import com.example.iter.payment.service.model.AdminPaymentDetailRow;
-import com.example.iter.payment.service.model.AdminPaymentSummaryRow;
+import com.example.iter.admin.payment.model.AdminPaymentDetailRow;
+import com.example.iter.admin.payment.model.AdminPaymentSummaryRow;
 import com.example.iter.reservation.api.RentalStatus;
 import org.junit.jupiter.api.Test;
 
