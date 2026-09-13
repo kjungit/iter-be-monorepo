@@ -1,13 +1,13 @@
 package com.example.iter.reservation.dto.response;
 
-import com.example.iter.auth.dto.response.UserSummaryResponse;
+import com.example.iter.auth.api.UserSummary;
 
 import java.time.LocalDate;
 
 public record ReturnComparisonResponse(
         Long rentalId,
         String equipmentName,
-        UserSummaryResponse renter,
+        UserSummary renter,
         LocalDate startDate,
         LocalDate endDate,
         LocalDate returnDate,

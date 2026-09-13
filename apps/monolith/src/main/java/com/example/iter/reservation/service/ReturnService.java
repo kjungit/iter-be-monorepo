@@ -1,7 +1,7 @@
 package com.example.iter.reservation.service;
 
-import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.domain.repository.UserRepository;
+import com.example.iter.auth.api.UserQueryPort;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.common.dto.request.PagingRequest;
 import com.example.iter.common.dto.response.PageResponse;
 import com.example.iter.common.exception.CustomException;
@@ -41,7 +41,7 @@ public class ReturnService {
     private final RentalRepository rentalRepository;
     private final EquipmentRepository equipmentRepository;
     private final EquipmentImageRepository equipmentImageRepository;
-    private final UserRepository userRepository;
+    private final UserQueryPort userQueryPort;
     private final ReceiptRepository receiptRepository;
     private final ReceiptImageRepository receiptImageRepository;
     private final ReturnReceiptRepository returnReceiptRepository;
@@ -81,7 +81,7 @@ public class ReturnService {
 
         validateParty(userId, rental, equipment);
 
-        User renter = findUser(rental.getRenterId());
+        UserSummary renter = findUser(rental.getRenterId());
         Receipt receipt = findReceipt(rentalId);
         ReturnReceipt returnReceipt = findReturnReceipt(rentalId);
 
@@ -179,12 +179,8 @@ public class ReturnService {
     }
 
     // 대여자 정보를 ID 기준으로 일괄 조회합니다.
-    private Map<Long, User> findRentersById(Set<Long> renterIds) {
-        return userRepository.findAllById(renterIds).stream()
-                .collect(Collectors.toMap(
-                        User::getId,
-                        Function.identity()
-                ));
+    private Map<Long, UserSummary> findRentersById(Set<Long> renterIds) {
+        return userQueryPort.findSummaries(renterIds);
     }
 
     // 반납 증빙을 거래 ID 기준으로 일괄 조회합니다.
@@ -210,7 +206,7 @@ public class ReturnService {
 
     // 거래와 일괄 조회한 데이터를 반납 확인 대상 응답으로 변환합니다.
     private ReturnTargetResponse toReturnTargetResponse(Rental rental, ReturnTargetData data) {
-        User renter = data.rentersById().get(rental.getRenterId());
+        UserSummary renter = data.rentersById().get(rental.getRenterId());
 
         if (renter == null) {
             throw new CustomException(ErrorCode.USER_NOT_FOUND);
@@ -249,8 +245,8 @@ public class ReturnService {
     }
 
     // 회원을 조회합니다.
-    private User findUser(Long userId) {
-        return userRepository.findById(userId)
+    private UserSummary findUser(Long userId) {
+        return userQueryPort.findSummary(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 
@@ -335,7 +331,7 @@ public class ReturnService {
 
     // 반납 확인 대상 목록 응답 생성에 필요한 일괄 조회 결과입니다.
     private record ReturnTargetData(
-            Map<Long, User> rentersById,
+            Map<Long, UserSummary> rentersById,
             Map<Long, ReturnReceipt> returnReceiptsByRentalId,
             Map<Long, String> thumbnailsByEquipmentId
     ) {

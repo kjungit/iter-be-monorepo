@@ -3,6 +3,8 @@ package com.example.iter.dispute.service;
 import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
+import com.example.iter.auth.api.UserQueryPort;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.auth.domain.repository.UserRepository;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
@@ -51,6 +53,9 @@ class ReportServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private UserQueryPort userQueryPort;
 
     @Mock
     private ReportTargetValidator reportTargetValidator;
@@ -173,7 +178,8 @@ class ReportServiceTest {
                 20
         );
 
-        when(userRepository.findById(REPORTER_ID)).thenReturn(Optional.of(reporter));
+        when(userQueryPort.findSummary(REPORTER_ID))
+                .thenReturn(Optional.of(new UserSummary(REPORTER_ID, reporter.getNickname())));
         when(reportRepository.findAll(
                 any(Specification.class),
                 any(Pageable.class)
@@ -201,7 +207,8 @@ class ReportServiceTest {
         User reporter = reporter(UserStatus.ACTIVE);
         Report report = report(10L, REPORTER_ID, ReportStatus.UNDER_REVIEW);
 
-        when(userRepository.findById(REPORTER_ID)).thenReturn(Optional.of(reporter));
+        when(userQueryPort.findSummary(REPORTER_ID))
+                .thenReturn(Optional.of(new UserSummary(REPORTER_ID, reporter.getNickname())));
         when(reportRepository.findByIdAndReporterId(10L, REPORTER_ID))
                 .thenReturn(Optional.of(report));
 
@@ -214,8 +221,8 @@ class ReportServiceTest {
 
     @Test
     void 존재하지_않거나_다른_사용자의_신고는_상세_조회할_수_없다() {
-        when(userRepository.findById(REPORTER_ID))
-                .thenReturn(Optional.of(reporter(UserStatus.ACTIVE)));
+        when(userQueryPort.findSummary(REPORTER_ID))
+                .thenReturn(Optional.of(new UserSummary(REPORTER_ID, "신고자")));
         when(reportRepository.findByIdAndReporterId(10L, REPORTER_ID))
                 .thenReturn(Optional.empty());
 

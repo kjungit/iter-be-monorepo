@@ -1,5 +1,7 @@
 package com.example.iter.auth.api;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 
 // auth 가 다른 도메인에게 공개하는 회원 조회 창구.
@@ -28,4 +30,16 @@ public interface UserQueryPort {
     // 회원을 못 찾았을 때의 처리가 호출 경로마다 다르다. 알림 리스너는 조용히 건너뛰고,
     // 다른 호출부는 USER_NOT_FOUND 를 던진다. 포트가 그걸 정하면 한쪽이 바뀐다.
     Optional<UserProfile> findProfile(Long userId);
+
+    // 화면 표시용 회원 요약. 탈퇴·정지 회원도 그대로 돌려준다.
+    Optional<UserSummary> findSummary(Long userId);
+
+    // 여러 명을 한 번에. 못 찾은 ID 는 결과 Map 에서 빠진다 (예외를 던지지 않는다).
+    //
+    // List 가 아니라 Map 을 돌려주는 이유: 호출부 6곳이 전부
+    // findAllById(...).stream().collect(toMap(User::getId, identity())) 를 복붙하고 있었다.
+    // 그 조립을 포트 안으로 넣으면 호출부에서 그 블록이 사라진다.
+    //
+    // !! 한 건씩 루프로 호출하지 말 것 !! N+1 이 된다. 목킹한 테스트는 그대로 통과한다.
+    Map<Long, UserSummary> findSummaries(Collection<Long> userIds);
 }
