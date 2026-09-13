@@ -1,10 +1,10 @@
 package com.example.iter.reservation.service;
 
+import com.example.iter.auth.api.UserLockPort;
+import com.example.iter.auth.api.UserLockView;
 import com.example.iter.auth.api.UserQueryPort;
 import com.example.iter.auth.api.UserSummary;
-import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
-import com.example.iter.auth.domain.repository.UserRepository;
 import com.example.iter.common.dto.response.PageResponse;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
@@ -60,9 +60,8 @@ public class RentalService {
 
     private final RentalRepository rentalRepository;
     private final EquipmentRepository equipmentRepository;
-    // 락 경로(findWithLockById)만 남아 있다. PR 05 에서 UserLockPort 로 옮기면 이 필드는 사라진다.
-    private final UserRepository userRepository;
     private final UserQueryPort userQueryPort;
+    private final UserLockPort userLockPort;
     private final PaymentRepository paymentRepository;
     private final TossPaymentClient tossPaymentClient;
     private final ApplicationEventPublisher eventPublisher;
@@ -358,17 +357,18 @@ public class RentalService {
     }
 
     private void lockAndValidateRentalParticipants(Long renterId, Long ownerId) {
-        Long firstId = Math.min(renterId, ownerId);
-        Long secondId = Math.max(renterId, ownerId);
-        User first = findUserWithLock(firstId);
-        User second = findUserWithLock(secondId);
-        User renter = first.getId().equals(renterId) ? first : second;
-        User owner = first.getId().equals(ownerId) ? first : second;
+        // 잠그는 순서(ID 오름차순)는 UserLockPort 구현의 책임이다.
+        // 여기서 순서를 정하면 다른 호출부와 어긋나 데드락이 난다 — RentalCreationDeadlockTest 참고.
+        Map<Long, UserLockView> locked = userLockPort.lockAll(List.of(renterId, ownerId));
 
-        if (renter.getStatus() == UserStatus.SUSPENDED) {
+        UserLockView renter = requireLocked(locked, renterId);
+        UserLockView owner = requireLocked(locked, ownerId);
+
+        // 어떤 상태가 차단 사유이고 어떤 에러 코드를 쓰는지는 이쪽(대여 정책)이 정한다.
+        if (renter.status() == UserStatus.SUSPENDED) {
             throw new CustomException(ErrorCode.USER_SUSPENDED);
         }
-        if (renter.getStatus() == UserStatus.DELETED) {
+        if (renter.status() == UserStatus.DELETED) {
             throw new CustomException(ErrorCode.USER_DELETED);
         }
         if (!owner.isActive()) {
@@ -376,9 +376,12 @@ public class RentalService {
         }
     }
 
-    private User findUserWithLock(Long userId) {
-        return userRepository.findWithLockById(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    private UserLockView requireLocked(Map<Long, UserLockView> locked, Long userId) {
+        UserLockView view = locked.get(userId);
+        if (view == null) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+        return view;
     }
 
     private int overdueDays(Rental rental) {
