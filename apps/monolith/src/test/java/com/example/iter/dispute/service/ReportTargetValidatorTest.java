@@ -13,6 +13,7 @@ import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.dispute.domain.entity.ReportTargetType;
 import com.example.iter.reservation.domain.entity.Rental;
 import com.example.iter.reservation.api.RentalInfo;
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.api.RentalQueryPort;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -219,6 +220,7 @@ class ReportTargetValidatorTest {
     }
 
     private RentalInfo rental(Long id, Long equipmentId, Long renterId) {
-        return new RentalInfo(id, equipmentId, renterId, "테스트 장비", null);
+        return new RentalInfo(id, equipmentId, renterId, "테스트 장비", null,
+                RentalStatus.RENTING, java.math.BigDecimal.valueOf(150000));
     }
 }

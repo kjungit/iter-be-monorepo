@@ -1,7 +1,7 @@
 package com.example.iter.payment.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.example.iter.payment.domain.entity.PaymentStatus;
+import com.example.iter.payment.api.PaymentStatus;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

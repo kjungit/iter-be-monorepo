@@ -6,14 +6,16 @@ import com.example.iter.payment.client.TossApiException;
 import com.example.iter.payment.client.TossPaymentClient;
 import com.example.iter.payment.config.TossProperties;
 import com.example.iter.payment.domain.entity.Payment;
-import com.example.iter.payment.domain.entity.PaymentStatus;
+import com.example.iter.payment.api.PaymentStatus;
 import com.example.iter.payment.domain.repository.PaymentRepository;
 import com.example.iter.payment.dto.request.PaymentConfirmRequest;
 import com.example.iter.payment.dto.toss.TossConfirmApiResponse;
 import com.example.iter.payment.event.PaymentConfirmedEvent;
 import com.example.iter.reservation.domain.entity.Rental;
 import com.example.iter.reservation.api.RentalStatus;
-import com.example.iter.reservation.domain.repository.RentalRepository;
+import com.example.iter.reservation.api.RentalCommandPort;
+import com.example.iter.reservation.api.RentalInfo;
+import com.example.iter.reservation.api.RentalQueryPort;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -36,7 +38,10 @@ import static org.mockito.Mockito.when;
 class PaymentServiceTest {
 
     @Mock
-    private RentalRepository rentalRepository;
+    private RentalQueryPort rentalQueryPort;
+
+    @Mock
+    private RentalCommandPort rentalCommandPort;
     @Mock
     private PaymentRepository paymentRepository;
     @Mock
@@ -49,23 +54,15 @@ class PaymentServiceTest {
     private final TossProperties tossProperties = new TossProperties("test_ck_docs", "test_sk_docs");
 
     private PaymentService paymentService() {
-        return new PaymentService(rentalRepository, paymentRepository, tossPaymentClient, tossProperties, paymentFailureRecorder, eventPublisher);
+        return new PaymentService(rentalQueryPort, rentalCommandPort, paymentRepository, tossPaymentClient, tossProperties, paymentFailureRecorder, eventPublisher);
     }
 
-    private Rental pendingRental() {
-        return Rental.builder()
-                .id(10L)
-                .equipmentId(1L)
-                .renterId(2L)
-                .startDate(LocalDate.of(2026, 8, 20))
-                .endDate(LocalDate.of(2026, 8, 25))
-                .productNameSnapshot("소니 A7C2")
-                .categorySnapshot("카메라")
-                .dailyPriceSnapshot(BigDecimal.valueOf(30000))
-                .rentalDays(6)
-                .totalPrice(BigDecimal.valueOf(180000))
-                .status(RentalStatus.PENDING)
-                .build();
+    private RentalInfo pendingRental() {
+        return rental(RentalStatus.PENDING);
+    }
+
+    private RentalInfo rental(RentalStatus status) {
+        return new RentalInfo(10L, 1L, 2L, "소니 A7C2", null, status, BigDecimal.valueOf(180000));
     }
 
     private Payment readyPayment(String orderId, BigDecimal amount) {
@@ -76,8 +73,7 @@ class PaymentServiceTest {
 
     @Test
     void ready는_orderId를_발급하고_Payment를_PENDING으로_저장한다() {
-        Rental rental = pendingRental();
-        when(rentalRepository.findById(10L)).thenReturn(Optional.of(rental));
+        when(rentalQueryPort.find(10L)).thenReturn(Optional.of(pendingRental()));
         when(paymentRepository.findByRentalId(10L)).thenReturn(Optional.empty());
         when(paymentRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -90,12 +86,15 @@ class PaymentServiceTest {
 
     @Test
     void confirm은_승인_성공시_Rental과_Payment_상태를_바꾼다() {
-        Rental rental = pendingRental();
         Payment payment = readyPayment("order-1", BigDecimal.valueOf(180000));
-        when(rentalRepository.findById(10L)).thenReturn(Optional.of(rental));
+        when(rentalQueryPort.find(10L)).thenReturn(Optional.of(pendingRental()));
         when(paymentRepository.findByRentalId(10L)).thenReturn(Optional.of(payment));
         when(tossPaymentClient.confirm(eq("payKey"), eq("order-1"), eq(BigDecimal.valueOf(180000)), any()))
                 .thenReturn(new TossConfirmApiResponse("payKey", "order-1", "DONE", "2026-08-10T09:10:00+09:00", 180000L));
+
+        // 커맨드 포트는 변경 "후" 상태를 돌려준다. 응답의 rentalStatus 가 이 값이어야 한다.
+        when(rentalCommandPort.markPaymentConfirmed(10L))
+                .thenReturn(Optional.of(rental(RentalStatus.REQUESTED)));
 
         var request = new PaymentConfirmRequest("payKey", "order-1", BigDecimal.valueOf(180000));
         var response = paymentService().confirm(10L, 2L, request);
@@ -103,15 +102,13 @@ class PaymentServiceTest {
         assertThat(response.rentalStatus()).isEqualTo(RentalStatus.REQUESTED);
         assertThat(response.paymentStatus()).isEqualTo(PaymentStatus.PAID);
         assertThat(payment.getPaymentKey()).isEqualTo("payKey");
-        assertThat(rental.getStatus()).isEqualTo(RentalStatus.REQUESTED);
         verify(eventPublisher).publishEvent(new PaymentConfirmedEvent(10L));
     }
 
     @Test
     void confirm은_금액이_다르면_토스를_호출하지_않고_예외를_던진다() {
-        Rental rental = pendingRental();
         Payment payment = readyPayment("order-1", BigDecimal.valueOf(180000));
-        when(rentalRepository.findById(10L)).thenReturn(Optional.of(rental));
+        when(rentalQueryPort.find(10L)).thenReturn(Optional.of(pendingRental()));
         when(paymentRepository.findByRentalId(10L)).thenReturn(Optional.of(payment));
 
         var request = new PaymentConfirmRequest("payKey", "order-1", BigDecimal.valueOf(999));
@@ -125,9 +122,8 @@ class PaymentServiceTest {
 
     @Test
     void confirm은_orderId가_다르면_예외를_던진다() {
-        Rental rental = pendingRental();
         Payment payment = readyPayment("order-1", BigDecimal.valueOf(180000));
-        when(rentalRepository.findById(10L)).thenReturn(Optional.of(rental));
+        when(rentalQueryPort.find(10L)).thenReturn(Optional.of(pendingRental()));
         when(paymentRepository.findByRentalId(10L)).thenReturn(Optional.of(payment));
 
         var request = new PaymentConfirmRequest("payKey", "order-다른값", BigDecimal.valueOf(180000));
@@ -140,10 +136,9 @@ class PaymentServiceTest {
 
     @Test
     void confirm은_이미_결제완료된_건이면_예외를_던진다() {
-        Rental rental = pendingRental();
         Payment payment = readyPayment("order-1", BigDecimal.valueOf(180000));
         payment.markPaid("payKey", java.time.LocalDateTime.now());
-        when(rentalRepository.findById(10L)).thenReturn(Optional.of(rental));
+        when(rentalQueryPort.find(10L)).thenReturn(Optional.of(pendingRental()));
         when(paymentRepository.findByRentalId(10L)).thenReturn(Optional.of(payment));
 
         var request = new PaymentConfirmRequest("payKey", "order-1", BigDecimal.valueOf(180000));
@@ -156,9 +151,8 @@ class PaymentServiceTest {
 
     @Test
     void confirm은_토스_승인_실패시_실패기록을_남기고_예외를_던진다() {
-        Rental rental = pendingRental();
         Payment payment = readyPayment("order-1", BigDecimal.valueOf(180000));
-        when(rentalRepository.findById(10L)).thenReturn(Optional.of(rental));
+        when(rentalQueryPort.find(10L)).thenReturn(Optional.of(pendingRental()));
         when(paymentRepository.findByRentalId(10L)).thenReturn(Optional.of(payment));
         when(tossPaymentClient.confirm(any(), any(), any(), any())).thenThrow(new TossApiException("REJECT_CARD_COMPANY"));
 
@@ -169,7 +163,8 @@ class PaymentServiceTest {
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.TOSS_PAYMENT_FAILED);
         verify(paymentFailureRecorder).recordFailure(payment.getId());
-        assertThat(rental.getStatus()).isEqualTo(RentalStatus.PENDING);
+        // 토스 승인이 실패하면 대여 상태를 바꾸지 않는다.
+        verify(rentalCommandPort, never()).markPaymentConfirmed(any());
         verify(eventPublisher, never()).publishEvent(any());
     }
 }

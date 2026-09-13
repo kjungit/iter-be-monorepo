@@ -8,6 +8,7 @@ import com.example.iter.notification.domain.entity.NotificationType;
 import com.example.iter.payment.api.PaymentQueryPort;
 import com.example.iter.payment.event.PaymentConfirmedEvent;
 import com.example.iter.reservation.api.RentalInfo;
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.api.RentalQueryPort;
 import com.example.iter.reservation.api.RentalReviewQueryPort;
 import com.example.iter.reservation.event.RentalApprovedEvent;
@@ -20,6 +21,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -64,7 +66,8 @@ class NotificationEventListenerTest {
     private NotificationEventListener listener;
 
     private RentalInfo rental() {
-        return new RentalInfo(RENTAL_ID, EQUIPMENT_ID, RENTER_ID, "소니 A7C2", "일정이 겹칩니다.");
+        return new RentalInfo(RENTAL_ID, EQUIPMENT_ID, RENTER_ID, "소니 A7C2", "일정이 겹칩니다.",
+                RentalStatus.REQUESTED, BigDecimal.valueOf(150000));
     }
 
     private UserProfile user(Long id, String email, String name) {

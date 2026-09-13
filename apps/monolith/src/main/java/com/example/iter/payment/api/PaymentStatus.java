@@ -1,4 +1,4 @@
-package com.example.iter.payment.domain.entity;
+package com.example.iter.payment.api;
 
 // ERD PAYMENT.status
 public enum PaymentStatus {

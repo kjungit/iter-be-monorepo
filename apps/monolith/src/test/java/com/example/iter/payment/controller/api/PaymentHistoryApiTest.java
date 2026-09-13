@@ -4,7 +4,7 @@ import com.example.iter.auth.domain.entity.User;
 import com.example.iter.auth.domain.repository.UserRepository;
 import com.example.iter.common.security.JwtTokenProvider;
 import com.example.iter.payment.domain.entity.Payment;
-import com.example.iter.payment.domain.entity.PaymentStatus;
+import com.example.iter.payment.api.PaymentStatus;
 import com.example.iter.payment.domain.repository.PaymentRepository;
 import com.example.iter.reservation.domain.entity.Rental;
 import com.example.iter.reservation.api.RentalStatus;
