@@ -1,10 +1,14 @@
 package com.example.iter.auth.support;
 
+import com.example.iter.auth.api.UserProfile;
 import com.example.iter.auth.api.UserQueryPort;
+import com.example.iter.auth.domain.entity.User;
 import com.example.iter.auth.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 // auth/api/UserQueryPort 의 모놀리스 구현. 같은 프로세스이므로 리포지토리를 직접 호출한다.
 // 서비스가 분리되면 이 클래스만 RestUserQueryAdapter 로 교체한다.
@@ -25,5 +29,23 @@ public class JpaUserQueryAdapter implements UserQueryPort {
     @Transactional(readOnly = true)
     public long count() {
         return userRepository.count();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<UserProfile> findProfile(Long userId) {
+        return userRepository.findById(userId).map(JpaUserQueryAdapter::toProfile);
+    }
+
+    // 매핑을 UserProfile 의 static 팩터리가 아니라 어댑터에 두는 이유:
+    // UserProfile.from(User) 를 만들면 auth.api 가 auth.domain.entity 를 알게 되고,
+    // 3차에서 api 를 별도 아티팩트로 떼어낼 때 엔티티가 딸려 나온다.
+    private static UserProfile toProfile(User user) {
+        return new UserProfile(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getPreferredLanguage()
+        );
     }
 }

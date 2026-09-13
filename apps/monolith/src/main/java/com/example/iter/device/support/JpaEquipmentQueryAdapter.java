@@ -1,10 +1,13 @@
 package com.example.iter.device.support;
 
 import com.example.iter.device.api.EquipmentQueryPort;
+import com.example.iter.device.domain.entity.Equipment;
 import com.example.iter.device.domain.repository.EquipmentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 // device/api/EquipmentQueryPort 의 모놀리스 구현.
 // 규약은 auth/support/JpaUserQueryAdapter 의 주석을 따른다.
@@ -18,5 +21,11 @@ public class JpaEquipmentQueryAdapter implements EquipmentQueryPort {
     @Transactional(readOnly = true)
     public long count() {
         return equipmentRepository.count();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Long> findOwnerId(Long equipmentId) {
+        return equipmentRepository.findById(equipmentId).map(Equipment::getOwnerId);
     }
 }
