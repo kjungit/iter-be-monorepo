@@ -12,6 +12,7 @@ dependencies {
     jacocoAggregation project(':services:delivery')
     jacocoAggregation project(':services:notification')
     jacocoAggregation project(':services:dispute')
+    jacocoAggregation project(':services:auth')
 }
 
 // jacoco-report-aggregation 플러그인은 리포트 태스크를 자동으로 만들어주지 않는다.
