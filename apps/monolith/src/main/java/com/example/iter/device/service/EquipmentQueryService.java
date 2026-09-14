@@ -28,7 +28,6 @@ import com.example.iter.device.dto.response.MyEquipmentSummaryResponse;
 import com.example.iter.device.dto.response.EquipmentScheduleResponse;
 import com.example.iter.device.dto.response.RentalScheduleItemResponse;
 import com.example.iter.device.support.EquipmentImageUrlResolver;
-import com.example.iter.reservation.domain.policy.RentalConflictPolicy;
 import com.example.iter.reservation.api.RentalQueryPort;
 import com.example.iter.reservation.api.RentalScheduleItem;
 import lombok.RequiredArgsConstructor;
@@ -252,7 +251,6 @@ public class EquipmentQueryService {
                 request.maxPrice(),
                 request.startDate(),
                 request.endDate(),
-                RentalConflictPolicy.nonOccupyingStatuses(),
                 PageRequest.of(request.page(), request.size(), equipmentSort(request.sort()))
         );
     }

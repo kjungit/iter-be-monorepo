@@ -29,6 +29,16 @@ public interface RentalRepository extends JpaRepository<Rental, Long> {
             """)
     Page<Rental> findReceivedRentals( @Param("ownerId") Long ownerId, @Param("status") RentalStatus status, Pageable pageable );
 
+    // expirePendingRentals가 만료시킬 대상의 ID. 일괄 UPDATE 전에 먼저 조회해둬야
+    // EquipmentOccupancy(점유 프로젝션)를 어떤 rentalId로 비울지 알 수 있다.
+    @Query("""
+            select r.id
+            from Rental r
+            where r.status = RentalStatus.PENDING
+              and r.createdAt < :cutoff
+            """)
+    List<Long> findPendingRentalIdsOlderThan(@Param("cutoff") LocalDateTime cutoff);
+
     // 결제(#3)를 30분 안에 완료하지 않은 PENDING 요청을 자동 취소해서 선점을 풀어준다.
     @Modifying
     @Query("""

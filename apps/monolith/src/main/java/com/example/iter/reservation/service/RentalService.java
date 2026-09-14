@@ -10,6 +10,7 @@ import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.device.api.EquipmentInfo;
 import com.example.iter.device.api.EquipmentLockPort;
+import com.example.iter.device.api.EquipmentOccupancyCommandPort;
 import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.payment.client.TossApiException;
 import com.example.iter.payment.client.TossPaymentClient;
@@ -62,6 +63,7 @@ public class RentalService {
     private final RentalRepository rentalRepository;
     private final EquipmentQueryPort equipmentQueryPort;
     private final EquipmentLockPort equipmentLockPort;
+    private final EquipmentOccupancyCommandPort equipmentOccupancyCommandPort;
     private final UserQueryPort userQueryPort;
     private final UserLockPort userLockPort;
     private final PaymentQueryPort paymentQueryPort;
@@ -135,6 +137,8 @@ public class RentalService {
                 .build();
 
         Rental savedRental = rentalRepository.save(rental);
+        equipmentOccupancyCommandPort.markOccupied(
+                savedRental.getId(), savedRental.getEquipmentId(), startDate, endDate);
         log.info("대여 신청 처리: rentalId={}, equipmentId={}, renterId={}, status={}",
                 savedRental.getId(), savedRental.getEquipmentId(), renterId, savedRental.getStatus());
         return RentalCreateResponse.from(savedRental);
@@ -235,6 +239,7 @@ public class RentalService {
         PaymentStatus paymentStatus = paymentCommandPort.cancelIfPaid(rentalId, "대여 취소").orElse(null);
 
         rental.changeStatus(RentalStatus.CANCELED);
+        equipmentOccupancyCommandPort.markVacated(rental.getId());
         if (ownerWasNotified) {
             eventPublisher.publishEvent(new RentalCanceledEvent(rental.getId()));
         }
@@ -311,7 +316,16 @@ public class RentalService {
     // RentalExpirationScheduler가 주기적으로 호출한다.
     @Transactional
     public int expirePendingRentals() {
-        return rentalRepository.expirePendingRentals(LocalDateTime.now().minusMinutes(30));
+        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(30);
+        // 일괄 UPDATE는 엔티티를 로드하지 않아 rental.changeStatus()를 거치지 않는다.
+        // EquipmentOccupancy를 비우려면 대상 rentalId를 먼저 알아야 한다.
+        List<Long> expiringRentalIds = rentalRepository.findPendingRentalIdsOlderThan(cutoff);
+        if (expiringRentalIds.isEmpty()) {
+            return 0;
+        }
+        int expiredCount = rentalRepository.expirePendingRentals(cutoff);
+        equipmentOccupancyCommandPort.markVacatedAll(expiringRentalIds);
+        return expiredCount;
     }
 
     // 결제 완료건이면 환불하고 예약을 REJECTED 로 전환. 환불 후 상태를 돌려준다.
@@ -319,6 +333,7 @@ public class RentalService {
     private PaymentStatus rejectAndRefund(Rental rental, String reason) {
         PaymentStatus paymentStatus = paymentCommandPort.cancelIfPaid(rental.getId(), reason).orElse(null);
         rental.reject(reason);
+        equipmentOccupancyCommandPort.markVacated(rental.getId());
         return paymentStatus;
     }
 

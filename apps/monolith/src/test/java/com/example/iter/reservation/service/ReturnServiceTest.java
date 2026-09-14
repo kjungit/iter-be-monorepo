@@ -9,6 +9,7 @@ import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.device.domain.entity.Equipment;
 import com.example.iter.device.domain.entity.EquipmentCategory;
 import com.example.iter.device.api.EquipmentInfo;
+import com.example.iter.device.api.EquipmentOccupancyCommandPort;
 import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.device.api.EquipmentThumbnailQueryPort;
 import com.example.iter.dispute.api.DisputeCommandPort;
@@ -71,6 +72,9 @@ class ReturnServiceTest {
 
     @Mock
     private EquipmentThumbnailQueryPort equipmentThumbnailQueryPort;
+
+    @Mock
+    private EquipmentOccupancyCommandPort equipmentOccupancyCommandPort;
 
     @Mock
     private UserQueryPort userQueryPort;
