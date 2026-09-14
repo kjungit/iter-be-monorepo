@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 // 도메인 경계를 지키는 회귀 방지 테스트.
 //
-// 마일스톤 2에서 도메인 간 직접 참조를 99건에서 2건으로 줄였다.
+// 도메인 간 직접 참조를 99건에서 2건으로 줄인 적이 있다.
 // 그런데 이 경계를 지켜주는 장치가 코드에는 없었다 — 남의 Repository 를 주입해도
 // 컴파일이 되고 테스트도 통과한다. 다음 사람이 무심코 되돌리기 쉽다.
 //
@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 // 라이브러리를 추가하지 않는 대신 검사 범위가 좁다 — 리플렉션이나 문자열로 만든
 // 클래스 이름은 못 잡는다. 그래도 "남의 Repository 를 주입했다" 같은 흔한 되돌림은 잡힌다.
 //
-// 마일스톤 3에서 도메인이 services/* 모듈로 쪼개진 뒤로는 모듈 간 경계 자체는
+// 도메인이 services/* 모듈로 쪼개진 뒤로는 모듈 간 경계 자체는
 // Gradle 의존 그래프가 컴파일 타임에 강제한다 (다른 도메인 모듈을 implementation
 // 의존하지 않으면 그 도메인 내부 클래스는 애초에 import가 컴파일되지 않는다).
 // 다만 apps/monolith 처럼 여러 도메인 모듈을 전부 의존하는 곳에서는 .api 를
@@ -50,7 +50,7 @@ class DomainBoundaryTest {
     // 대비해 프로퍼티가 없으면 user.dir 에서 settings.gradle 을 찾을 때까지 상위로
     // 올라가는 폴백을 둔다.
     //
-    // libs/core·libs/security·libs/storage 는 제외한다 — 마일스톤 1 때부터 이미
+    // libs/core·libs/security·libs/storage 는 제외한다 — 이들은 처음부터
     // 별도 모듈이었고 패키지가 전부 common.* 라 NOT_A_DOMAIN 에 어차피 걸린다.
     private static final List<Path> SOURCE_ROOTS = List.of(
                     "apps/monolith",
@@ -105,8 +105,8 @@ class DomainBoundaryTest {
     @Test
     @DisplayName("JPQL 이 다른 도메인의 엔티티를 새로 조인하지 않는다")
     void 크로스_도메인_JPQL_이_늘지_않는다() {
-        // 마일스톤 2 시점엔 12건이었다. ③(Rental.ownerIdSnapshot), ⑤(Payment.renterIdSnapshot),
-        // ⑦(EquipmentOccupancy 프로젝션)로 도메인 안의 크로스 조인은 전부 사라졌다(0건).
+        // 예전엔 12건이었다. Rental.ownerIdSnapshot, Payment.renterIdSnapshot,
+        // EquipmentOccupancy 프로젝션 도입으로 도메인 안의 크로스 조인은 전부 사라졌다(0건).
         // admin(조합 계층)의 크로스 조인은 이 테스트 대상이 아니다 — forEachSource가
         // NOT_A_DOMAIN(admin 포함)을 건너뛴다.
         assertThat(crossDomainJpqlQueries())
