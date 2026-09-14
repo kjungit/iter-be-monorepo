@@ -1,7 +1,6 @@
 package com.example.iter.reservation.util;
 
 import com.example.iter.auth.api.UserSummary;
-import com.example.iter.auth.domain.entity.User;
 import com.example.iter.reservation.domain.entity.ProductConditionType;
 import com.example.iter.reservation.domain.entity.Receipt;
 import com.example.iter.reservation.domain.entity.Rental;
