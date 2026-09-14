@@ -44,4 +44,8 @@ dependencies {
 // 커버리지 리포트와 게이트는 모듈별이 아니라 루트에서 집계한다 - 루트 build.gradle 참고.
 tasks.named('test', Test) {
     useJUnitPlatform()
+
+    // DomainBoundaryTest처럼 소스 트리를 직접 훑는 테스트가 있어서,
+    // 어느 모듈에서 이 test 태스크가 돌든 저장소 루트를 알 수 있게 넘긴다.
+    systemProperty 'iter.repoRoot', rootProject.projectDir.absolutePath
 }
