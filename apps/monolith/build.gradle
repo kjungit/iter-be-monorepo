@@ -12,6 +12,7 @@ dependencies {
     implementation project(':services:delivery')
     implementation project(':services:notification')
     implementation project(':services:dispute')
+    implementation project(':services:auth')
 
     implementation libs.spring.boot.starter.data.jpa
     implementation libs.spring.boot.starter.security
@@ -26,9 +27,9 @@ dependencies {
     runtimeOnly libs.jjwt.jackson
     implementation libs.springdoc.openapi.webmvc.ui
 
-    // 도메인 5개 파일이 Jackson 2 애너테이션을 쓴다. 원래 springdoc 전이 의존에 우연히 얹혀 있던 것을 명시한다.
-    // (notification/domain/entity/NotificationParamsConverter는 services:notification으로 옮겨져
-    // 그쪽에서 별도로 선언한다.)
+    // 도메인 3개 파일(device/payment/reservation)이 Jackson 2 애너테이션을 쓴다.
+    // 원래 springdoc 전이 의존에 우연히 얹혀 있던 것을 명시한다. notification/auth로 옮겨간
+    // 파일들은 각 모듈에서 별도로 선언한다.
     implementation libs.jackson2.databind
 
     implementation libs.spring.boot.starter.flyway
