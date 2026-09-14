@@ -1,7 +1,6 @@
 package com.example.iter.device.service;
 
 import com.example.iter.common.security.Role;
-import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
 import com.example.iter.auth.api.UserQueryPort;
 import com.example.iter.auth.api.UserSummary;
