@@ -15,6 +15,7 @@ import com.example.iter.device.domain.entity.ProductConditionType;
 import com.example.iter.device.api.EquipmentInfo;
 import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.device.api.EquipmentLockPort;
+import com.example.iter.device.api.EquipmentOccupancyCommandPort;
 import com.example.iter.payment.api.PaymentCommandPort;
 import com.example.iter.payment.api.PaymentQueryPort;
 import com.example.iter.payment.api.PaymentStatus;
@@ -63,6 +64,8 @@ class RentalServiceTest {
 
     @Mock
     private EquipmentLockPort equipmentLockPort;
+    @Mock
+    private EquipmentOccupancyCommandPort equipmentOccupancyCommandPort;
     @Mock
     private UserQueryPort userQueryPort;
 

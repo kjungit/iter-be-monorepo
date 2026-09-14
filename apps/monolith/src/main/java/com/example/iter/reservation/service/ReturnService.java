@@ -8,6 +8,7 @@ import com.example.iter.common.dto.response.PageResponse;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.device.api.EquipmentInfo;
+import com.example.iter.device.api.EquipmentOccupancyCommandPort;
 import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.device.api.EquipmentThumbnailQueryPort;
 import com.example.iter.dispute.api.DisputeCommandPort;
@@ -41,6 +42,7 @@ public class ReturnService {
     private final RentalRepository rentalRepository;
     private final EquipmentQueryPort equipmentQueryPort;
     private final EquipmentThumbnailQueryPort equipmentThumbnailQueryPort;
+    private final EquipmentOccupancyCommandPort equipmentOccupancyCommandPort;
     private final UserQueryPort userQueryPort;
     private final ReceiptRepository receiptRepository;
     private final ReceiptImageRepository receiptImageRepository;
@@ -111,6 +113,7 @@ public class ReturnService {
 
         if (Boolean.FALSE.equals(request.hasIssue())) {
             rental.completeReturn();
+            equipmentOccupancyCommandPort.markVacated(rental.getId());
             log.info("대여 반납 확인 처리: rentalId={}, ownerId={}, status={}, hasIssue={}",
                     rentalId, ownerId, rental.getStatus(), false);
 

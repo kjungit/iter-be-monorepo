@@ -3,7 +3,6 @@ package com.example.iter.device.domain.repository;
 import com.example.iter.device.domain.entity.Equipment;
 import com.example.iter.device.domain.entity.EquipmentCategory;
 import com.example.iter.device.domain.entity.EquipmentStatus;
-import com.example.iter.reservation.api.RentalStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,7 +15,6 @@ import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,6 +22,9 @@ public interface EquipmentRepository extends JpaRepository<Equipment, Long> {
 
     Optional<Equipment> findByIdAndStatus(Long id, EquipmentStatus status);
 
+    // 기간 필터는 device 소유 가용성 프로젝션(EquipmentOccupancy)만 본다 — reservation의
+    // Rental을 더 이상 직접 조인하지 않는다. 최종 일관성이지만, 실제 예약 생성 시점의
+    // 비관적 락 재검증이 오버부킹을 막으므로 안전하다(자세한 근거는 EquipmentOccupancy 참고).
     @Query(
             value = """
                     select e
@@ -39,12 +40,11 @@ public interface EquipmentRepository extends JpaRepository<Equipment, Long> {
                               e.availableFrom <= :startDate
                               and e.availableTo >= :endDate
                               and not exists (
-                                  select rental.id
-                                  from Rental rental
-                                  where rental.equipmentId = e.id
-                                    and rental.status not in :excludedStatuses
-                                    and rental.startDate <= :endDate
-                                    and rental.endDate >= :startDate
+                                  select occupancy.id
+                                  from EquipmentOccupancy occupancy
+                                  where occupancy.equipmentId = e.id
+                                    and occupancy.startDate <= :endDate
+                                    and occupancy.endDate >= :startDate
                               )
                           )
                       )
@@ -63,12 +63,11 @@ public interface EquipmentRepository extends JpaRepository<Equipment, Long> {
                               e.availableFrom <= :startDate
                               and e.availableTo >= :endDate
                               and not exists (
-                                  select rental.id
-                                  from Rental rental
-                                  where rental.equipmentId = e.id
-                                    and rental.status not in :excludedStatuses
-                                    and rental.startDate <= :endDate
-                                    and rental.endDate >= :startDate
+                                  select occupancy.id
+                                  from EquipmentOccupancy occupancy
+                                  where occupancy.equipmentId = e.id
+                                    and occupancy.startDate <= :endDate
+                                    and occupancy.endDate >= :startDate
                               )
                           )
                       )
@@ -81,7 +80,6 @@ public interface EquipmentRepository extends JpaRepository<Equipment, Long> {
             @Param("maxPrice") BigDecimal maxPrice,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate,
-            @Param("excludedStatuses") Collection<RentalStatus> excludedStatuses,
             Pageable pageable
     );
 

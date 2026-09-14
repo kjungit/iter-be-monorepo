@@ -3,12 +3,15 @@ package com.example.iter.device.controller.api;
 import com.example.iter.device.domain.entity.Equipment;
 import com.example.iter.device.domain.entity.EquipmentCategory;
 import com.example.iter.device.domain.entity.EquipmentImage;
+import com.example.iter.device.domain.entity.EquipmentOccupancy;
 import com.example.iter.device.domain.entity.EquipmentStatus;
 import com.example.iter.device.domain.entity.ProductConditionType;
 import com.example.iter.device.domain.repository.EquipmentImageRepository;
+import com.example.iter.device.domain.repository.EquipmentOccupancyRepository;
 import com.example.iter.device.domain.repository.EquipmentRepository;
 import com.example.iter.reservation.domain.entity.Rental;
 import com.example.iter.reservation.api.RentalStatus;
+import com.example.iter.reservation.domain.policy.RentalConflictPolicy;
 import com.example.iter.reservation.domain.repository.RentalRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,10 +43,13 @@ class EquipmentQueryApiTest {
     private EquipmentImageRepository equipmentImageRepository;
     @Autowired
     private RentalRepository rentalRepository;
+    @Autowired
+    private EquipmentOccupancyRepository equipmentOccupancyRepository;
 
     @BeforeEach
     void setUp() {
         equipmentImageRepository.deleteAll();
+        equipmentOccupancyRepository.deleteAll();
         rentalRepository.deleteAll();
         equipmentRepository.deleteAll();
     }
@@ -251,7 +257,7 @@ class EquipmentQueryApiTest {
             RentalStatus status,
             Long renterId
     ) {
-        rentalRepository.save(Rental.builder()
+        Rental rental = rentalRepository.save(Rental.builder()
                 .equipmentId(equipment.getId())
                 .ownerIdSnapshot(equipment.getOwnerId())
                 .renterId(renterId)
@@ -264,5 +270,16 @@ class EquipmentQueryApiTest {
                 .totalPrice(equipment.getDailyPrice())
                 .status(status)
                 .build());
+
+        // 검색 가용성 필터는 이제 EquipmentOccupancy 프로젝션만 본다 — 실제 서비스(RentalService)라면
+        // 생성 시점에 같이 채우지만, 여기서는 Repository로 직접 픽스처를 심으므로 같이 채워줘야 한다.
+        if (!RentalConflictPolicy.nonOccupyingStatuses().contains(status)) {
+            equipmentOccupancyRepository.save(EquipmentOccupancy.builder()
+                    .equipmentId(equipment.getId())
+                    .rentalId(rental.getId())
+                    .startDate(startDate)
+                    .endDate(endDate)
+                    .build());
+        }
     }
 }
