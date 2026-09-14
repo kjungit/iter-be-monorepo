@@ -1,7 +1,6 @@
 package com.example.iter.dispute.util;
 
 import com.example.iter.auth.api.UserSummary;
-import com.example.iter.auth.domain.entity.User;
 import com.example.iter.dispute.domain.entity.Report;
 import com.example.iter.dispute.domain.entity.ReportStatus;
 import com.example.iter.dispute.domain.entity.ReportTargetType;

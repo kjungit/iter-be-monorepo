@@ -4,13 +4,9 @@ import com.example.iter.common.security.UserStatus;
 import com.example.iter.auth.api.UserQueryPort;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
-import com.example.iter.device.domain.entity.Equipment;
-import com.example.iter.device.domain.entity.EquipmentCategory;
-import com.example.iter.device.domain.entity.EquipmentStatus;
 import com.example.iter.device.api.EquipmentInfo;
 import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.dispute.domain.entity.ReportTargetType;
-import com.example.iter.reservation.domain.entity.Rental;
 import com.example.iter.reservation.api.RentalInfo;
 import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.api.RentalQueryPort;
@@ -100,7 +96,7 @@ class ReportTargetValidatorTest {
     @Test
     void 본인_소유_장비는_신고할_수_없다() {
         when(equipmentQueryPort.find(10L))
-                .thenReturn(Optional.of(equipment(10L, REPORTER_ID, EquipmentStatus.ACTIVE)));
+                .thenReturn(Optional.of(equipment(10L, REPORTER_ID, true, false)));
 
         assertThatThrownBy(() -> reportTargetValidator.validate(
                 ReportTargetType.EQUIPMENT,
@@ -115,7 +111,7 @@ class ReportTargetValidatorTest {
     @Test
     void 삭제된_장비는_신고할_수_없다() {
         when(equipmentQueryPort.find(10L))
-                .thenReturn(Optional.of(equipment(10L, 2L, EquipmentStatus.DELETED)));
+                .thenReturn(Optional.of(equipment(10L, 2L, false, true)));
 
         assertThatThrownBy(() -> reportTargetValidator.validate(
                 ReportTargetType.EQUIPMENT,
@@ -130,7 +126,7 @@ class ReportTargetValidatorTest {
     @Test
     void 타인_소유의_점검중인_장비도_신고할_수_있다() {
         when(equipmentQueryPort.find(10L))
-                .thenReturn(Optional.of(equipment(10L, 2L, EquipmentStatus.MAINTENANCE)));
+                .thenReturn(Optional.of(equipment(10L, 2L, false, false)));
 
         assertThatCode(() -> reportTargetValidator.validate(
                 ReportTargetType.EQUIPMENT,
@@ -142,7 +138,7 @@ class ReportTargetValidatorTest {
     @Test
     void 거래의_대여자와_장비_등록자는_거래를_신고할_수_있다() {
         RentalInfo renterRental = rental(100L, 10L, REPORTER_ID);
-        EquipmentInfo ownerEquipment = equipment(10L, 2L, EquipmentStatus.DELETED);
+        EquipmentInfo ownerEquipment = equipment(10L, 2L, false, true);
         when(rentalQueryPort.find(100L)).thenReturn(Optional.of(renterRental));
         when(equipmentQueryPort.find(10L)).thenReturn(Optional.of(ownerEquipment));
 
@@ -153,7 +149,7 @@ class ReportTargetValidatorTest {
         )).doesNotThrowAnyException();
 
         RentalInfo ownerRental = rental(101L, 11L, 3L);
-        EquipmentInfo reporterEquipment = equipment(11L, REPORTER_ID, EquipmentStatus.ACTIVE);
+        EquipmentInfo reporterEquipment = equipment(11L, REPORTER_ID, true, false);
         when(rentalQueryPort.find(101L)).thenReturn(Optional.of(ownerRental));
         when(equipmentQueryPort.find(11L)).thenReturn(Optional.of(reporterEquipment));
 
@@ -167,7 +163,7 @@ class ReportTargetValidatorTest {
     @Test
     void 거래_제3자는_거래를_신고할_수_없다() {
         RentalInfo rental = rental(100L, 10L, 2L);
-        EquipmentInfo equipment = equipment(10L, 3L, EquipmentStatus.ACTIVE);
+        EquipmentInfo equipment = equipment(10L, 3L, true, false);
         when(rentalQueryPort.find(100L)).thenReturn(Optional.of(rental));
         when(equipmentQueryPort.find(10L)).thenReturn(Optional.of(equipment));
 
@@ -198,15 +194,15 @@ class ReportTargetValidatorTest {
     }
 
 
-    private EquipmentInfo equipment(Long id, Long ownerId, EquipmentStatus status) {
+    private EquipmentInfo equipment(Long id, Long ownerId, boolean active, boolean deleted) {
         return new EquipmentInfo(
                 id,
                 ownerId,
                 "테스트 장비",
-                EquipmentCategory.CAMERA.name(),
+                "CAMERA",
                 java.math.BigDecimal.valueOf(30000),
-                status == EquipmentStatus.ACTIVE,
-                status == EquipmentStatus.DELETED
+                active,
+                deleted
         );
     }
 

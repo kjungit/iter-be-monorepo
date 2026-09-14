@@ -1,6 +1,5 @@
 package com.example.iter.reservation.service;
 
-import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
 import com.example.iter.auth.api.UserLockPort;
 import com.example.iter.auth.api.UserLockView;
@@ -8,10 +7,6 @@ import com.example.iter.auth.api.UserQueryPort;
 import com.example.iter.auth.api.UserSummary;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
-import com.example.iter.device.domain.entity.Equipment;
-import com.example.iter.device.domain.entity.EquipmentCategory;
-import com.example.iter.device.domain.entity.EquipmentStatus;
-import com.example.iter.device.domain.entity.ProductConditionType;
 import com.example.iter.device.api.EquipmentInfo;
 import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.device.api.EquipmentLockPort;
@@ -19,7 +14,6 @@ import com.example.iter.device.api.EquipmentOccupancyCommandPort;
 import com.example.iter.payment.api.PaymentCommandPort;
 import com.example.iter.payment.api.PaymentQueryPort;
 import com.example.iter.payment.api.PaymentStatus;
-import com.example.iter.payment.service.model.RentalPaymentStatusRow;
 import com.example.iter.reservation.domain.entity.Rental;
 import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.domain.repository.RentalRepository;
@@ -82,10 +76,6 @@ class RentalServiceTest {
     @InjectMocks
     private RentalService rentalService;
 
-    private Equipment equipment(Long ownerId) {
-        return equipment(ownerId, EquipmentStatus.ACTIVE);
-    }
-
     // 락을 쓰지 않는 조회 경로는 포트로 옮겨져 값 객체를 돌려준다.
     private EquipmentInfo equipmentInfo(Long ownerId) {
         return equipmentInfo(ownerId, true, false);
@@ -93,21 +83,9 @@ class RentalServiceTest {
 
     private EquipmentInfo equipmentInfo(Long ownerId, boolean active, boolean deleted) {
         return new EquipmentInfo(
-                1L, ownerId, "소니 A7C2", EquipmentCategory.CAMERA.name(),
+                1L, ownerId, "소니 A7C2", "CAMERA",
                 BigDecimal.valueOf(30000), active, deleted
         );
-    }
-
-    private Equipment equipment(Long ownerId, EquipmentStatus status) {
-        return Equipment.builder()
-                .id(1L)
-                .ownerId(ownerId)
-                .category(EquipmentCategory.CAMERA)
-                .name("소니 A7C2")
-                .dailyPrice(BigDecimal.valueOf(30000))
-                .status(status)
-                .productCondition(ProductConditionType.NORMAL)
-                .build();
     }
 
     private RentalCreateRequest request() {

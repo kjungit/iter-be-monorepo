@@ -2,8 +2,6 @@ package com.example.iter.reservation.service;
 
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
-import com.example.iter.device.domain.entity.Equipment;
-import com.example.iter.device.domain.entity.EquipmentCategory;
 import com.example.iter.device.api.EquipmentInfo;
 import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.reservation.domain.entity.Rental;
@@ -201,7 +199,7 @@ class RentalReviewServiceTest {
                 EQUIPMENT_ID,
                 OWNER_ID,
                 "현재 장비명",
-                EquipmentCategory.LAPTOP.name(),
+                "LAPTOP",
                 BigDecimal.valueOf(50000),
                 true,
                 false

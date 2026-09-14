@@ -2,6 +2,7 @@ package com.example.iter.dispute.service;
 
 import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
+import com.example.iter.auth.domain.entity.UserFixtures;
 import com.example.iter.common.security.UserStatus;
 import com.example.iter.auth.api.UserLockPort;
 import com.example.iter.auth.api.UserLockView;
@@ -246,15 +247,7 @@ class ReportServiceTest {
     }
 
     private User reporter(UserStatus status, Role role) {
-        return User.builder()
-                .id(REPORTER_ID)
-                .email("reporter@iter.test")
-                .password("encoded-password")
-                .name("신고자")
-                .nickname("신고자닉네임")
-                .role(role)
-                .status(status)
-                .build();
+        return UserFixtures.user(REPORTER_ID, "신고자", "신고자닉네임", status, role);
     }
 
     private ReportCreateRequest createRequest() {
