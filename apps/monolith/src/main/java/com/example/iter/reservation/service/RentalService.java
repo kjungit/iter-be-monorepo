@@ -9,9 +9,8 @@ import com.example.iter.common.dto.response.PageResponse;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.device.api.EquipmentInfo;
+import com.example.iter.device.api.EquipmentLockPort;
 import com.example.iter.device.api.EquipmentQueryPort;
-import com.example.iter.device.domain.entity.Equipment;
-import com.example.iter.device.domain.repository.EquipmentRepository;
 import com.example.iter.payment.client.TossApiException;
 import com.example.iter.payment.client.TossPaymentClient;
 import com.example.iter.payment.domain.entity.Payment;
@@ -61,9 +60,8 @@ public class RentalService {
     );
 
     private final RentalRepository rentalRepository;
-    // 락 경로(findByIdForUpdate)만 남아 있다. PR 07 에서 EquipmentLockPort 로 옮기면 이 필드는 사라진다.
-    private final EquipmentRepository equipmentRepository;
     private final EquipmentQueryPort equipmentQueryPort;
+    private final EquipmentLockPort equipmentLockPort;
     private final UserQueryPort userQueryPort;
     private final UserLockPort userLockPort;
     private final PaymentRepository paymentRepository;
@@ -72,7 +70,7 @@ public class RentalService {
 
     @Transactional
     public RentalCreateResponse createRental(Long renterId, RentalCreateRequest request) {
-        Equipment equipment = equipmentRepository.findById(request.equipmentId())
+        EquipmentInfo equipment = equipmentQueryPort.find(request.equipmentId())
                 .orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
 
         if (equipment.isOwnedBy(renterId)) {
@@ -94,11 +92,11 @@ public class RentalService {
 
         // 회원 탈퇴와 신규 대여 생성이 서로 같은 사용자 행 락에 참여하도록 한다.
         // 두 사용자를 항상 ID 오름차순으로 잠가 서로 상대방 장비를 동시에 대여할 때의 데드락도 줄인다.
-        lockAndValidateRentalParticipants(renterId, equipment.getOwnerId());
+        lockAndValidateRentalParticipants(renterId, equipment.ownerId());
 
         // 같은 장비에 대한 동시 요청을 직렬화하기 위해 락을 잡고 재조회 — 선점 방식이라
         // "겹치는지 확인"과 "저장"이 하나의 원자적 구간이어야 두 명이 동시에 같은 기간을 통과시키지 못한다.
-        equipment = equipmentRepository.findByIdForUpdate(equipment.getId())
+        equipment = equipmentLockPort.lockForUpdate(equipment.equipmentId())
                 .orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
 
         if (!equipment.isActive()) {
@@ -106,7 +104,7 @@ public class RentalService {
         }
 
         if (!rentalRepository.findConflictingOccupyingRentalsForUpdate(
-                equipment.getId(),
+                equipment.equipmentId(),
                 startDate,
                 endDate,
                 RentalConflictPolicy.nonOccupyingStatuses()).isEmpty()) {
@@ -114,16 +112,16 @@ public class RentalService {
         }
 
         int rentalDays = (int) ChronoUnit.DAYS.between(startDate, endDate) + 1;
-        BigDecimal totalPrice = equipment.getDailyPrice().multiply(BigDecimal.valueOf(rentalDays));
+        BigDecimal totalPrice = equipment.dailyPrice().multiply(BigDecimal.valueOf(rentalDays));
 
         Rental rental = Rental.builder()
-                .equipmentId(equipment.getId())
+                .equipmentId(equipment.equipmentId())
                 .renterId(renterId)
                 .startDate(startDate)
                 .endDate(endDate)
-                .productNameSnapshot(equipment.getName())
-                .categorySnapshot(equipment.getCategory().name())
-                .dailyPriceSnapshot(equipment.getDailyPrice())
+                .productNameSnapshot(equipment.name())
+                .categorySnapshot(equipment.categoryName())
+                .dailyPriceSnapshot(equipment.dailyPrice())
                 .rentalDays(rentalDays)
                 .totalPrice(totalPrice)
                 .receiverName(request.receiverName())
@@ -257,7 +255,7 @@ public class RentalService {
     @Transactional
     public RentalApproveResponse approveRental(Long rentalId, Long currentUserId, boolean isAdmin) {
         Rental rental = getRentalWithLockOrThrow(rentalId);
-        Equipment equipment = equipmentRepository.findById(rental.getEquipmentId())
+        EquipmentInfo equipment = equipmentQueryPort.find(rental.getEquipmentId())
                 .orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
 
         if (!isAdmin && !equipment.isOwnedBy(currentUserId)) {
@@ -267,7 +265,7 @@ public class RentalService {
             throw new CustomException(ErrorCode.RENTAL_NOT_APPROVABLE);
         }
 
-        equipment = equipmentRepository.findByIdForUpdate(equipment.getId())
+        equipment = equipmentLockPort.lockForUpdate(equipment.equipmentId())
                 .orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
 
         // 1) 락을 잡은 상태에서 재검증 — 요청 이후 관리자가 장비를 중지/삭제시켰다면 승인 불가
@@ -277,7 +275,7 @@ public class RentalService {
 
         // 2) 이 사이 다른 트랜잭션이 먼저 커밋한 확정 예약이 있으면 승인 불가
         if (!rentalRepository.findConflictingOccupyingRentalsForUpdate(
-                equipment.getId(),
+                equipment.equipmentId(),
                 rental.getStartDate(),
                 rental.getEndDate(),
                 RentalConflictPolicy.nonConfirmedStatuses()).isEmpty()) {
@@ -290,7 +288,7 @@ public class RentalService {
         rental.approve();
         eventPublisher.publishEvent(new RentalApprovedEvent(rental.getId()));
         log.info("대여 승인 처리: rentalId={}, equipmentId={}, actorId={}, actorType={}, status={}",
-                rentalId, equipment.getId(), currentUserId, isAdmin ? "ADMIN" : "USER", rental.getStatus());
+                rentalId, equipment.equipmentId(), currentUserId, isAdmin ? "ADMIN" : "USER", rental.getStatus());
 
         return RentalApproveResponse.from(rental);
     }
