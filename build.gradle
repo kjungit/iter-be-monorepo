@@ -54,7 +54,7 @@ def aggregatedCoverageVerification = tasks.register('aggregatedCoverageVerificat
     violationRules {
         rule {
             limit {
-                minimum = 0.50
+                minimum = 0.80
             }
         }
     }
