@@ -2,7 +2,7 @@ package com.example.iter.device.storage;
 
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
-import com.example.iter.device.config.S3StorageProperties;
+import com.example.iter.common.storage.S3StorageProperties;
 import com.example.iter.device.service.EquipmentImagePolicy;
 import com.example.iter.device.support.EquipmentImageUrlResolver;
 import org.junit.jupiter.api.BeforeEach;

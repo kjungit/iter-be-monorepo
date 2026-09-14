@@ -1,4 +1,4 @@
-package com.example.iter.device.config;
+package com.example.iter.common.storage;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
