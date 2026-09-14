@@ -2,4 +2,9 @@ plugins {
     id 'iter.spring-library-conventions'
 }
 
-description = 'iter 도메인 간 공개 창구(Port) 모음 - 도메인 순환을 끊기 위한 <domain>.api 패키지 전용 모듈'
+description = 'iter 도메인 간 공개 창구(Port) 모음 - 도메인 순환을 끊기 위한 <domain>.api/<domain>.event 패키지 전용 모듈'
+
+dependencies {
+    // auth.api.UserLockView 가 UserStatus(libs/security)를 공개 시그니처에 그대로 노출한다.
+    api project(':libs:security')
+}
