@@ -1,6 +1,6 @@
 package com.example.iter.device.support;
 
-import com.example.iter.device.config.S3StorageProperties;
+import com.example.iter.common.storage.S3StorageProperties;
 import com.example.iter.device.domain.entity.EquipmentImage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
