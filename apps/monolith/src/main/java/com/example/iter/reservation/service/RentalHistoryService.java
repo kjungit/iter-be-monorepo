@@ -87,7 +87,7 @@ public class RentalHistoryService {
     public PageResponse<RentalHistoryResponse> getLentOverdueHistory(Long ownerId, PagingRequest request) {
         LocalDate today = LocalDate.now();
 
-        Page<Rental> rentals = rentalHistoryRepository.findLentOverdueHistory(
+        Page<Rental> rentals = rentalHistoryRepository.findByOwnerIdSnapshotAndEndDateBeforeAndStatusIn(
                 ownerId,
                 today,
                 RentalOverduePolicy.statuses(),

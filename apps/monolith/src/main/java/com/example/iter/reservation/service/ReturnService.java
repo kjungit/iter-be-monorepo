@@ -55,7 +55,7 @@ public class ReturnService {
     public PageResponse<ReturnTargetResponse> getReturnTargets(Long ownerId, PagingRequest request) {
         PageRequest pageable = createPageRequest(request);
 
-        Page<Rental> rentals = rentalRepository.findReturnTargetsByOwnerIdAndStatus(
+        Page<Rental> rentals = rentalRepository.findByOwnerIdSnapshotAndStatus(
                 ownerId,
                 RentalStatus.RETURNED,
                 pageable

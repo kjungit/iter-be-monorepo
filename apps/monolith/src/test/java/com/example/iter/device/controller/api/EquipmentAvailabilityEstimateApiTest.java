@@ -252,6 +252,7 @@ class EquipmentAvailabilityEstimateApiTest {
     ) {
         rentalRepository.saveAndFlush(Rental.builder()
                 .equipmentId(equipment.getId())
+                .ownerIdSnapshot(equipment.getOwnerId())
                 .renterId(99L)
                 .startDate(startDate)
                 .endDate(endDate)

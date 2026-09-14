@@ -58,7 +58,7 @@ class PaymentServiceIntegrationTest {
                 .ownerId(owner.getId()).category(EquipmentCategory.CAMERA).name("A7C2")
                 .dailyPrice(BigDecimal.valueOf(10000)).build());
         Rental rental = rentalRepository.save(Rental.builder()
-                .equipmentId(equipment.getId()).renterId(renter.getId())
+                .equipmentId(equipment.getId()).ownerIdSnapshot(owner.getId()).renterId(renter.getId())
                 .startDate(LocalDate.now().plusDays(1)).endDate(LocalDate.now().plusDays(2))
                 .productNameSnapshot("A7C2").categorySnapshot("카메라")
                 .dailyPriceSnapshot(BigDecimal.valueOf(10000))

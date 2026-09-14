@@ -117,6 +117,7 @@ public class RentalService {
 
         Rental rental = Rental.builder()
                 .equipmentId(equipment.equipmentId())
+                .ownerIdSnapshot(equipment.ownerId())
                 .renterId(renterId)
                 .startDate(startDate)
                 .endDate(endDate)

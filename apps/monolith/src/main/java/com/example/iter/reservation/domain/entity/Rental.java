@@ -25,16 +25,20 @@ import java.time.LocalDateTime;
                         columnList = "renter_id, created_at DESC, id DESC"
                 ),
                 @Index(
-                        name = "idx_rental_equipment_created_id",
-                        columnList = "equipment_id, created_at DESC, id DESC"
-                ),
-                @Index(
                         name = "idx_rental_equipment_period",
                         columnList = "equipment_id, start_date, end_date, id, status"
                 ),
                 @Index(
                         name = "idx_rental_status_created",
                         columnList = "status, created_at"
+                ),
+                @Index(
+                        name = "idx_rental_owner_created_id",
+                        columnList = "owner_id_snapshot, created_at DESC, id DESC"
+                ),
+                @Index(
+                        name = "idx_rental_owner_end_date_status",
+                        columnList = "owner_id_snapshot, end_date, status"
                 )
         }
 )
@@ -53,6 +57,10 @@ public class Rental extends BaseTimeEntity {
 
     @Column(name = "equipment_id", nullable = false)
     private Long equipmentId;
+
+    // 예약 시점 장비 소유자 스냅샷 — device 도메인 엔티티를 직접 조인하지 않고도 "내 장비의 대여 내역"을 조회하기 위함.
+    @Column(name = "owner_id_snapshot", nullable = false)
+    private Long ownerIdSnapshot;
 
     @Column(name = "renter_id", nullable = false)
     private Long renterId;

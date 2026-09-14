@@ -170,6 +170,7 @@ class EquipmentScheduleApiTest {
     ) {
         return rentalRepository.saveAndFlush(Rental.builder()
                 .equipmentId(equipment.getId())
+                .ownerIdSnapshot(equipment.getOwnerId())
                 .renterId(999L)
                 .startDate(startDate)
                 .endDate(endDate)

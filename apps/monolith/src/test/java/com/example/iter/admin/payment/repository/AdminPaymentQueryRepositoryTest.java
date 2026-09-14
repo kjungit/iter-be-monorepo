@@ -266,6 +266,7 @@ class AdminPaymentQueryRepositoryTest {
 
         Rental rental = rentalRepository.saveAndFlush(Rental.builder()
                 .equipmentId(100L + renter.getId())
+                .ownerIdSnapshot(1L)
                 .renterId(renter.getId())
                 .startDate(LocalDate.of(2026, 8, 21))
                 .endDate(LocalDate.of(2026, 8, 30))
