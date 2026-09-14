@@ -19,8 +19,7 @@ import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.common.pagination.CursorCodec;
 import com.example.iter.common.pagination.CursorKey;
 import com.example.iter.device.domain.repository.EquipmentRepository;
-import com.example.iter.dispute.domain.entity.ReportTargetType;
-import com.example.iter.dispute.domain.repository.ReportRepository;
+import com.example.iter.dispute.api.ReportQueryPort;
 import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.api.RentalQueryPort;
 import com.example.iter.reservation.api.UserRentalStats;
@@ -44,7 +43,7 @@ public class AdminUserService {
     private final UserRepository userRepository;
     private final EquipmentRepository equipmentRepository;
     private final RentalQueryPort rentalQueryPort;
-    private final ReportRepository reportRepository;
+    private final ReportQueryPort reportQueryPort;
     private final AdminActionService adminActionService;
     private final AdminUserMapper adminUserMapper;
 
@@ -107,7 +106,7 @@ public class AdminUserService {
         long rentedCount = rentalStats.rentedCount();
         long lentCount = rentalStats.lentCount();
         long overdueCount = rentalStats.overdueCount();
-        long reportCount = reportRepository.countByTargetTypeAndTargetId(ReportTargetType.USER, userId);
+        long reportCount = reportQueryPort.countAgainstUser(userId);
 
         return adminUserMapper.toDetail(
                 user,

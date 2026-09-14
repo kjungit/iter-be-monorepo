@@ -3,10 +3,7 @@ package com.example.iter.reservation.service;
 import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
-import com.example.iter.delivery.domain.entity.Shipping;
-import com.example.iter.delivery.domain.entity.ShippingStatus;
-import com.example.iter.delivery.domain.entity.ShippingType;
-import com.example.iter.delivery.domain.repository.ShippingRepository;
+import com.example.iter.delivery.api.ShippingCommandPort;
 import com.example.iter.device.api.EquipmentInfo;
 import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.reservation.domain.entity.*;
@@ -44,7 +41,7 @@ public class RentalFulfillmentService {
 
     private final RentalRepository rentalRepository;
     private final EquipmentQueryPort equipmentQueryPort;
-    private final ShippingRepository shippingRepository;
+    private final ShippingCommandPort shippingCommandPort;
     private final ReceiptRepository receiptRepository;
     private final ReceiptImageRepository receiptImageRepository;
     private final ReturnReceiptRepository returnReceiptRepository;
@@ -63,15 +60,8 @@ public class RentalFulfillmentService {
         }
 
         LocalDateTime now = LocalDateTime.now();
-        shippingRepository.save(Shipping.builder()
-                .rentalId(rental.getId())
-                .type(ShippingType.OUTBOUND)
-                .carrier(request.carrier())
-                .trackingNumber(request.trackingNumber())
-                .status(ShippingStatus.DELIVERED)
-                .shippedAt(now)
-                .deliveredAt(now)
-                .build());
+        shippingCommandPort.recordOutboundDelivered(
+                rental.getId(), request.carrier(), request.trackingNumber(), now);
 
         rental.changeStatus(RentalStatus.SHIPPING);
         log.info("대여 출고 처리: rentalId={}, equipmentId={}, ownerId={}, status={}",
@@ -143,13 +133,7 @@ public class RentalFulfillmentService {
                 .build());
         saveReturnReceiptImages(returnReceipt, request.imageUrls());
 
-        shippingRepository.save(Shipping.builder()
-                .rentalId(rental.getId())
-                .type(ShippingType.RETURN)
-                .status(ShippingStatus.DELIVERED)
-                .shippedAt(now)
-                .deliveredAt(now)
-                .build());
+        shippingCommandPort.recordReturnDelivered(rental.getId(), now);
 
         rental.changeStatus(RentalStatus.RETURNED);
         log.info("대여 반납 증빙 등록 처리: rentalId={}, renterId={}, status={}",
