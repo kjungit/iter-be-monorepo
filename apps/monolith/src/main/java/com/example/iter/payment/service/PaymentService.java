@@ -6,16 +6,17 @@ import com.example.iter.payment.client.TossApiException;
 import com.example.iter.payment.client.TossPaymentClient;
 import com.example.iter.payment.config.TossProperties;
 import com.example.iter.payment.domain.entity.Payment;
-import com.example.iter.payment.domain.entity.PaymentStatus;
+import com.example.iter.payment.api.PaymentStatus;
 import com.example.iter.payment.domain.repository.PaymentRepository;
 import com.example.iter.payment.dto.request.PaymentConfirmRequest;
 import com.example.iter.payment.dto.response.PaymentConfirmResponse;
 import com.example.iter.payment.dto.response.PaymentReadyResponse;
 import com.example.iter.payment.dto.toss.TossConfirmApiResponse;
 import com.example.iter.payment.event.PaymentConfirmedEvent;
-import com.example.iter.reservation.domain.entity.Rental;
+import com.example.iter.reservation.api.RentalCommandPort;
+import com.example.iter.reservation.api.RentalInfo;
+import com.example.iter.reservation.api.RentalQueryPort;
 import com.example.iter.reservation.api.RentalStatus;
-import com.example.iter.reservation.domain.repository.RentalRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -31,7 +32,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PaymentService {
 
-    private final RentalRepository rentalRepository;
+    private final RentalQueryPort rentalQueryPort;
+    private final RentalCommandPort rentalCommandPort;
     private final PaymentRepository paymentRepository;
     private final TossPaymentClient tossPaymentClient;
     private final TossProperties tossProperties;
@@ -40,7 +42,7 @@ public class PaymentService {
 
     @Transactional
     public PaymentReadyResponse ready( Long rentalId, Long renterId) {
-        Rental rental = getPayableRental(rentalId, renterId);
+        RentalInfo rental = getPayableRental(rentalId, renterId);
 
         boolean alreadyPaid = paymentRepository.findByRentalId(rentalId)
                 .filter(payment -> payment.getStatus() == PaymentStatus.PAID)
@@ -50,7 +52,7 @@ public class PaymentService {
             throw new CustomException(ErrorCode.PAYMENT_ALREADY_COMPLETED);
         }
 
-        BigDecimal amount = rental.getTotalPrice();
+        BigDecimal amount = rental.totalPrice();
         String orderId = UUID.randomUUID().toString();
 
         Payment payment = paymentRepository.findByRentalId(rentalId)
@@ -65,7 +67,7 @@ public class PaymentService {
 
     @Transactional
     public PaymentConfirmResponse confirm( Long rentalId, Long renterId, PaymentConfirmRequest request ) {
-        Rental rental = getPayableRental(rentalId, renterId);
+        RentalInfo rental = getPayableRental(rentalId, renterId);
 
         Payment payment = paymentRepository.findByRentalId(rentalId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RENTAL_NOT_PAYABLE));
@@ -94,22 +96,27 @@ public class PaymentService {
             throw new CustomException(ErrorCode.TOSS_PAYMENT_FAILED);
         }
 
-        rental.changeStatus(RentalStatus.REQUESTED);
-        eventPublisher.publishEvent(new PaymentConfirmedEvent(rental.getId()));
+        // 변경 "후" 상태를 받아 응답에 싣는다. 전 상태를 쓰면 rentalStatus 가 PENDING 으로 나간다.
+        RentalInfo confirmedRental = rentalCommandPort.markPaymentConfirmed(rentalId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RENTAL_NOT_FOUND));
+
+        eventPublisher.publishEvent(new PaymentConfirmedEvent(confirmedRental.rentalId()));
         log.info("결제 승인 처리: paymentId={}, rentalId={}, renterId={}, paymentStatus={}, rentalStatus={}",
-                payment.getId(), rentalId, renterId, payment.getStatus(), rental.getStatus());
-        return PaymentConfirmResponse.of(rental, payment);
+                payment.getId(), rentalId, renterId, payment.getStatus(), confirmedRental.status());
+        return PaymentConfirmResponse.of(confirmedRental, payment);
     }
 
-    private Rental getPayableRental(Long rentalId, Long renterId) {
-        Rental rental = rentalRepository.findById(rentalId)
+    // 어떤 에러 코드를 던질지는 결제 쪽 정책이라 여기 남긴다.
+    // 포트는 상태만 돌려주고 예외를 고르지 않는다.
+    private RentalInfo getPayableRental(Long rentalId, Long renterId) {
+        RentalInfo rental = rentalQueryPort.find(rentalId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RENTAL_NOT_FOUND));
 
         if (!rental.isRenter(renterId)) {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
 
-        if(rental.getStatus() != RentalStatus.PENDING) {
+        if (rental.status() != RentalStatus.PENDING) {
             throw new CustomException(ErrorCode.RENTAL_NOT_PAYABLE);
         }
 

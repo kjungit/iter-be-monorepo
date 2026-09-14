@@ -7,7 +7,7 @@ import com.example.iter.device.domain.entity.EquipmentCategory;
 import com.example.iter.device.domain.repository.EquipmentRepository;
 import com.example.iter.payment.client.TossPaymentClient;
 import com.example.iter.payment.domain.entity.Payment;
-import com.example.iter.payment.domain.entity.PaymentStatus;
+import com.example.iter.payment.api.PaymentStatus;
 import com.example.iter.payment.domain.repository.PaymentRepository;
 import com.example.iter.payment.dto.request.PaymentConfirmRequest;
 import com.example.iter.payment.dto.toss.TossConfirmApiResponse;

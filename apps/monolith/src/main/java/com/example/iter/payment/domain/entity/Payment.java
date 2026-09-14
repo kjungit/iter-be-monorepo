@@ -1,5 +1,6 @@
 package com.example.iter.payment.domain.entity;
 
+import com.example.iter.payment.api.PaymentStatus;
 import com.example.iter.common.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;

@@ -1,6 +1,6 @@
 package com.example.iter.payment.service.model;
 
-import com.example.iter.payment.domain.entity.PaymentStatus;
+import com.example.iter.payment.api.PaymentStatus;
 import com.example.iter.reservation.api.RentalStatus;
 
 import java.math.BigDecimal;
