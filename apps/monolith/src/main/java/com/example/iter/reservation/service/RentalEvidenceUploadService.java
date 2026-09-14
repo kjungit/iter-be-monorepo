@@ -1,6 +1,6 @@
 package com.example.iter.reservation.service;
 
-import com.example.iter.device.config.S3StorageProperties;
+import com.example.iter.common.storage.S3StorageProperties;
 import com.example.iter.reservation.dto.request.EvidenceImagePresignRequest;
 import com.example.iter.reservation.dto.response.EvidenceImagePresignResponse;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
-// 대여 수령/반납 증빙 사진 업로드 — device 도메인의 S3Client/S3Presigner/S3StorageProperties
+// 대여 수령/반납 증빙 사진 업로드 — libs/storage 공용 S3Presigner/S3StorageProperties
 // 빈을 그대로 재사용한다(같은 버킷, 별도 요청/응답 DTO). 장비 이미지와 달리 임시 업로드
 // 추적 엔티티나 승격(promote) 단계가 없다 — 발급 즉시 최종 위치에 저장되는 단순한 흐름.
 //

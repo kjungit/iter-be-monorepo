@@ -7,6 +7,7 @@ dependencies {
     jacocoAggregation project(':apps:monolith')
     jacocoAggregation project(':libs:core')
     jacocoAggregation project(':libs:security')
+    jacocoAggregation project(':libs:storage')
 }
 
 // jacoco-report-aggregation 플러그인은 리포트 태스크를 자동으로 만들어주지 않는다.

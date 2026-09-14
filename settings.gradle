@@ -25,4 +25,5 @@ rootProject.name = 'iter'
 
 include 'libs:core'
 include 'libs:security'
+include 'libs:storage'
 include 'apps:monolith'

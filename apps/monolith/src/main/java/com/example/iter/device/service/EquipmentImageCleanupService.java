@@ -1,6 +1,6 @@
 package com.example.iter.device.service;
 
-import com.example.iter.config.AsyncConfig;
+import com.example.iter.device.config.DeviceAsyncConfig;
 import com.example.iter.device.storage.EquipmentImageStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +16,7 @@ public class EquipmentImageCleanupService {
 
     private final EquipmentImageStorage imageStorage;
 
-    @Async(AsyncConfig.S3_TASK_EXECUTOR)
+    @Async(DeviceAsyncConfig.S3_TASK_EXECUTOR)
     public void deleteAll(List<String> objectKeys, String failureMessage) {
         objectKeys.stream()
                 .filter(objectKey -> objectKey != null && !objectKey.isBlank())
