@@ -20,14 +20,11 @@ import java.util.Optional;
 
 public interface RentalRepository extends JpaRepository<Rental, Long> {
 
-    /**
-     * 대여자가 아닌 장비 등록자(owner) 기준으로 조회
-     * Rental이 Equipment와 FK 연관관계가 없어(equipmentId만 값으로 보관) 서브쿼리로 소유 장비 조회
-     */
+    // 대여자가 아닌 장비 등록자(owner) 기준으로 조회. Rental.ownerIdSnapshot(예약 시점 소유자 스냅샷)으로 직접 필터링.
     @Query("""
             select r
             from Rental r
-            where r.equipmentId in (select e.id from Equipment e where e.ownerId = :ownerId)
+            where r.ownerIdSnapshot = :ownerId
               and (:status is null or r.status = :status)
             """)
     Page<Rental> findReceivedRentals( @Param("ownerId") Long ownerId, @Param("status") RentalStatus status, Pageable pageable );
@@ -51,37 +48,10 @@ public interface RentalRepository extends JpaRepository<Rental, Long> {
 
 
     // 해당 회원이 소유한 장비에서 발생한 성립된 거래 수를 조회합니다.
-    @Query("""
-            select count(r.id)
-            from Rental r
-            join Equipment e on e.id = r.equipmentId
-            where e.ownerId = :ownerId
-              and r.status in :statuses
-            """)
-    long countLentByOwnerIdAndStatusIn(
-            @Param("ownerId") Long ownerId,
-            @Param("statuses") Collection<RentalStatus> statuses
-    );
-
+    long countByOwnerIdSnapshotAndStatusIn(Long ownerIdSnapshot, Collection<RentalStatus> statuses);
 
     // 등록자가 소유한 장비의 대여 거래 중 반납 최종 확인이 필요한 거래를 조회합니다.
-    @Query(
-            value = """
-                select r from Rental r
-                join Equipment e on e.id = r.equipmentId
-                where e.ownerId = :ownerId and r.status = :status
-                """,
-            countQuery = """
-                select count(r.id) from Rental r
-                join Equipment e on e.id = r.equipmentId
-                where e.ownerId = :ownerId and r.status = :status
-                """
-    )
-    Page<Rental> findReturnTargetsByOwnerIdAndStatus(
-            @Param("ownerId") Long ownerId,
-            @Param("status") RentalStatus status,
-            Pageable pageable
-    );
+    Page<Rental> findByOwnerIdSnapshotAndStatus(Long ownerIdSnapshot, RentalStatus status, Pageable pageable);
 
     // 동일 거래의 반납 최종 확인이 동시에 처리되지 않도록 거래 행을 비관적 쓰기 락으로 조회합니다.
     @Lock(LockModeType.PESSIMISTIC_WRITE)

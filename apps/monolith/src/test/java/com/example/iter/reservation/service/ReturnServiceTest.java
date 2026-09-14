@@ -98,7 +98,7 @@ class ReturnServiceTest {
 
     @Test
     void 반납_확인_대상이_없으면_빈_페이지를_반환한다() {
-        when(rentalRepository.findReturnTargetsByOwnerIdAndStatus(
+        when(rentalRepository.findByOwnerIdSnapshotAndStatus(
                 eq(OWNER_ID),
                 eq(RentalStatus.RETURNED),
                 any(Pageable.class)
@@ -118,7 +118,7 @@ class ReturnServiceTest {
         UserSummary renter = renter();
         ReturnReceipt returnReceipt = returnReceipt(rental);
 
-        when(rentalRepository.findReturnTargetsByOwnerIdAndStatus(
+        when(rentalRepository.findByOwnerIdSnapshotAndStatus(
                 eq(OWNER_ID),
                 eq(RentalStatus.RETURNED),
                 any(Pageable.class)
@@ -138,7 +138,7 @@ class ReturnServiceTest {
         assertThat(response.content().getFirst().returnDate()).isEqualTo(LocalDate.of(2026, 8, 10));
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(rentalRepository).findReturnTargetsByOwnerIdAndStatus(
+        verify(rentalRepository).findByOwnerIdSnapshotAndStatus(
                 eq(OWNER_ID),
                 eq(RentalStatus.RETURNED),
                 pageableCaptor.capture()
@@ -150,7 +150,7 @@ class ReturnServiceTest {
     @Test
     void 반납_확인_대상의_대여자가_없으면_오류를_반환한다() {
         Rental rental = rental(RentalStatus.RETURNED);
-        when(rentalRepository.findReturnTargetsByOwnerIdAndStatus(eq(OWNER_ID), eq(RentalStatus.RETURNED), any()))
+        when(rentalRepository.findByOwnerIdSnapshotAndStatus(eq(OWNER_ID), eq(RentalStatus.RETURNED), any()))
                 .thenReturn(new PageImpl<>(List.of(rental)));
         when(userQueryPort.findSummaries(any())).thenReturn(Map.of());
         when(returnReceiptRepository.findAllByRental_IdIn(any())).thenReturn(List.of(returnReceipt(rental)));

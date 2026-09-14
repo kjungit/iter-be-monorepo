@@ -40,7 +40,7 @@ public class JpaRentalQueryAdapter implements RentalQueryPort {
     public boolean hasWithdrawalBlockingRental(Long userId) {
         var blocking = RentalStatusPolicy.withdrawalBlockingStatuses();
         return rentalRepository.countByRenterIdAndStatusIn(userId, blocking) > 0
-                || rentalRepository.countLentByOwnerIdAndStatusIn(userId, blocking) > 0;
+                || rentalRepository.countByOwnerIdSnapshotAndStatusIn(userId, blocking) > 0;
     }
 
     @Override
@@ -49,7 +49,7 @@ public class JpaRentalQueryAdapter implements RentalQueryPort {
         var established = RentalStatusPolicy.establishedStatuses();
         return new UserRentalStats(
                 rentalRepository.countByRenterIdAndStatusIn(userId, established),
-                rentalRepository.countLentByOwnerIdAndStatusIn(userId, established),
+                rentalRepository.countByOwnerIdSnapshotAndStatusIn(userId, established),
                 rentalRepository.countByRenterIdAndEndDateBeforeAndStatusIn(
                         userId, today, RentalStatusPolicy.overdueStatuses())
         );

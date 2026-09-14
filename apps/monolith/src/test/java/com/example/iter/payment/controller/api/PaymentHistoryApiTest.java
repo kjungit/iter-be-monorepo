@@ -158,6 +158,7 @@ class PaymentHistoryApiTest {
     private Rental saveRental(Long renterId, String equipmentName) {
         return rentalRepository.saveAndFlush(Rental.builder()
                 .equipmentId(equipmentIdSequence++)
+                .ownerIdSnapshot(1L)
                 .renterId(renterId)
                 .startDate(LocalDate.now().plusDays(1))
                 .endDate(LocalDate.now().plusDays(3))

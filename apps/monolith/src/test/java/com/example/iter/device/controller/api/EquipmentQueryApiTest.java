@@ -253,6 +253,7 @@ class EquipmentQueryApiTest {
     ) {
         rentalRepository.save(Rental.builder()
                 .equipmentId(equipment.getId())
+                .ownerIdSnapshot(equipment.getOwnerId())
                 .renterId(renterId)
                 .startDate(startDate)
                 .endDate(endDate)

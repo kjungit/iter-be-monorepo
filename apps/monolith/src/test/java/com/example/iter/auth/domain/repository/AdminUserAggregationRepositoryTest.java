@@ -71,17 +71,17 @@ class AdminUserAggregationRepositoryTest {
         Equipment otherEquipment = equipmentRepository.saveAndFlush(equipment(otherOwner.getId(), "다른 장비"));
         LocalDate endDate = LocalDate.now().plusDays(3);
 
-        rentalRepository.saveAndFlush(rental(ownerEquipment.getId(), renter.getId(), endDate, RentalStatus.APPROVED));
-        rentalRepository.saveAndFlush(rental(ownerEquipment.getId(), renter.getId(), endDate, RentalStatus.COMPLETED));
-        rentalRepository.saveAndFlush(rental(ownerEquipment.getId(), renter.getId(), endDate, RentalStatus.REQUESTED));
-        rentalRepository.saveAndFlush(rental(otherEquipment.getId(), renter.getId(), endDate, RentalStatus.RENTING));
-        rentalRepository.saveAndFlush(rental(ownerEquipment.getId(), otherRenter.getId(), endDate, RentalStatus.RETURNED));
+        rentalRepository.saveAndFlush(rental(ownerEquipment, renter.getId(), endDate, RentalStatus.APPROVED));
+        rentalRepository.saveAndFlush(rental(ownerEquipment, renter.getId(), endDate, RentalStatus.COMPLETED));
+        rentalRepository.saveAndFlush(rental(ownerEquipment, renter.getId(), endDate, RentalStatus.REQUESTED));
+        rentalRepository.saveAndFlush(rental(otherEquipment, renter.getId(), endDate, RentalStatus.RENTING));
+        rentalRepository.saveAndFlush(rental(ownerEquipment, otherRenter.getId(), endDate, RentalStatus.RETURNED));
 
         long rentedCount = rentalRepository.countByRenterIdAndStatusIn(
                 renter.getId(),
                 ESTABLISHED_STATUSES
         );
-        long lentCount = rentalRepository.countLentByOwnerIdAndStatusIn(
+        long lentCount = rentalRepository.countByOwnerIdSnapshotAndStatusIn(
                 owner.getId(),
                 ESTABLISHED_STATUSES
         );
@@ -97,11 +97,11 @@ class AdminUserAggregationRepositoryTest {
         Equipment equipment = equipmentRepository.saveAndFlush(equipment(owner.getId(), "연체 장비"));
         LocalDate today = LocalDate.now();
 
-        rentalRepository.saveAndFlush(rental(equipment.getId(), renter.getId(), today.minusDays(5), RentalStatus.RECEIVED));
-        rentalRepository.saveAndFlush(rental(equipment.getId(), renter.getId(), today.minusDays(1), RentalStatus.RETURNING));
-        rentalRepository.saveAndFlush(rental(equipment.getId(), renter.getId(), today, RentalStatus.RENTING));
-        rentalRepository.saveAndFlush(rental(equipment.getId(), renter.getId(), today.minusDays(2), RentalStatus.COMPLETED));
-        rentalRepository.saveAndFlush(rental(equipment.getId(), renter.getId(), today.plusDays(1), RentalStatus.RECEIVED));
+        rentalRepository.saveAndFlush(rental(equipment, renter.getId(), today.minusDays(5), RentalStatus.RECEIVED));
+        rentalRepository.saveAndFlush(rental(equipment, renter.getId(), today.minusDays(1), RentalStatus.RETURNING));
+        rentalRepository.saveAndFlush(rental(equipment, renter.getId(), today, RentalStatus.RENTING));
+        rentalRepository.saveAndFlush(rental(equipment, renter.getId(), today.minusDays(2), RentalStatus.COMPLETED));
+        rentalRepository.saveAndFlush(rental(equipment, renter.getId(), today.plusDays(1), RentalStatus.RECEIVED));
 
         long overdueCount = rentalRepository.countByRenterIdAndEndDateBeforeAndStatusIn(
                 renter.getId(),
@@ -154,13 +154,14 @@ class AdminUserAggregationRepositoryTest {
     }
 
     private Rental rental(
-            Long equipmentId,
+            Equipment equipment,
             Long renterId,
             LocalDate endDate,
             RentalStatus status
     ) {
         return Rental.builder()
-                .equipmentId(equipmentId)
+                .equipmentId(equipment.getId())
+                .ownerIdSnapshot(equipment.getOwnerId())
                 .renterId(renterId)
                 .startDate(endDate.minusDays(3))
                 .endDate(endDate)

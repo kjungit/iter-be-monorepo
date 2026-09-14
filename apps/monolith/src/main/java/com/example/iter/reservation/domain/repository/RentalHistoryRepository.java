@@ -23,8 +23,7 @@ public interface RentalHistoryRepository extends Repository<Rental, Long>, JpaSp
             value = """
                     select r
                     from Rental r
-                        join Equipment e on r.equipmentId = e.id
-                    where e.ownerId = :ownerId
+                    where r.ownerIdSnapshot = :ownerId
                       and (:status is null or r.status = :status)
                       and (
                             :equipmentName is null
@@ -34,8 +33,7 @@ public interface RentalHistoryRepository extends Repository<Rental, Long>, JpaSp
             countQuery = """
                     select count(r.id)
                     from Rental r
-                        join Equipment e on r.equipmentId = e.id
-                    where e.ownerId = :ownerId
+                    where r.ownerIdSnapshot = :ownerId
                       and (:status is null or r.status = :status)
                       and (
                             :equipmentName is null
@@ -54,28 +52,10 @@ public interface RentalHistoryRepository extends Repository<Rental, Long>, JpaSp
     Page<Rental> findByRenterIdAndEndDateBeforeAndStatusIn(Long renterId, LocalDate today, Collection<RentalStatus> statuses, Pageable pageable);
 
     // 등록자가 빌려준 장비 중 아직 반납되지 않은 연체 거래를 조회합니다.
-    @Query(
-            value = """
-                    select r
-                    from Rental r
-                        join Equipment e on r.equipmentId = e.id
-                    where e.ownerId = :ownerId
-                      and r.endDate < :today
-                      and r.status in :statuses
-                    """,
-            countQuery = """
-                    select count(r.id)
-                    from Rental r
-                        join Equipment e on r.equipmentId = e.id
-                    where e.ownerId = :ownerId
-                      and r.endDate < :today
-                      and r.status in :statuses
-                    """
-    )
-    Page<Rental> findLentOverdueHistory(
-            @Param("ownerId") Long ownerId,
-            @Param("today") LocalDate today,
-            @Param("statuses") Collection<RentalStatus> statuses,
+    Page<Rental> findByOwnerIdSnapshotAndEndDateBeforeAndStatusIn(
+            Long ownerIdSnapshot,
+            LocalDate today,
+            Collection<RentalStatus> statuses,
             Pageable pageable
     );
 }
