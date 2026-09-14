@@ -280,6 +280,7 @@ class AdminPaymentQueryRepositoryTest {
 
         Payment payment = paymentRepository.saveAndFlush(Payment.builder()
                 .rentalId(rental.getId())
+                .renterIdSnapshot(rental.getRenterId())
                 .amount(BigDecimal.valueOf(300000))
                 .status(paymentStatus)
                 .orderId(orderId)

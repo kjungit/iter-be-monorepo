@@ -180,6 +180,7 @@ class PaymentHistoryApiTest {
         LocalDateTime now = LocalDateTime.now();
         return paymentRepository.saveAndFlush(Payment.builder()
                 .rentalId(rental.getId())
+                .renterIdSnapshot(rental.getRenterId())
                 .amount(rental.getTotalPrice())
                 .status(status)
                 .paidAt(status == PaymentStatus.PENDING ? null : now)

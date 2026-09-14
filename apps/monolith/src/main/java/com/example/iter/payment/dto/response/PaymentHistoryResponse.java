@@ -2,7 +2,7 @@ package com.example.iter.payment.dto.response;
 
 import com.example.iter.payment.domain.entity.Payment;
 import com.example.iter.payment.api.PaymentStatus;
-import com.example.iter.reservation.domain.entity.Rental;
+import com.example.iter.reservation.api.RentalInfo;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -22,14 +22,14 @@ public record PaymentHistoryResponse(
         LocalDateTime refundedAt,
         LocalDateTime createdAt
 ) {
-    public static PaymentHistoryResponse of(Payment payment, Rental rental) {
+    public static PaymentHistoryResponse of(Payment payment, RentalInfo rental) {
         return new PaymentHistoryResponse(
                 payment.getId(),
-                rental.getId(),
-                rental.getEquipmentId(),
-                rental.getProductNameSnapshot(),
-                rental.getStartDate(),
-                rental.getEndDate(),
+                rental.rentalId(),
+                rental.equipmentId(),
+                rental.productName(),
+                rental.startDate(),
+                rental.endDate(),
                 payment.getAmount(),
                 payment.getStatus(),
                 payment.getOrderId(),

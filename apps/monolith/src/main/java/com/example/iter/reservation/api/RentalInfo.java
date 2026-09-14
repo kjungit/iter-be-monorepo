@@ -1,5 +1,6 @@
 package com.example.iter.reservation.api;
 
+import java.time.LocalDate;
 import java.util.Objects;
 
 // 다른 도메인이 대여 건을 가리킬 때 쓰는 최소 정보.
@@ -19,7 +20,9 @@ public record RentalInfo(
         String productName,
         String rejectReason,
         RentalStatus status,
-        java.math.BigDecimal totalPrice
+        java.math.BigDecimal totalPrice,
+        LocalDate startDate,
+        LocalDate endDate
 ) {
     public RentalInfo {
         Objects.requireNonNull(rentalId, "rentalId");

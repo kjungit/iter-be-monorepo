@@ -20,6 +20,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -211,6 +212,7 @@ class ReportTargetValidatorTest {
 
     private RentalInfo rental(Long id, Long equipmentId, Long renterId) {
         return new RentalInfo(id, equipmentId, renterId, "테스트 장비", null,
-                RentalStatus.RENTING, java.math.BigDecimal.valueOf(150000));
+                RentalStatus.RENTING, java.math.BigDecimal.valueOf(150000),
+                LocalDate.now().plusDays(1), LocalDate.now().plusDays(3));
     }
 }

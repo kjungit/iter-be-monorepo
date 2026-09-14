@@ -14,8 +14,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 // reservation/api/RentalQueryPort 의 모놀리스 구현.
 // 규약은 auth/support/JpaUserQueryAdapter 의 주석을 따른다.
@@ -33,6 +37,17 @@ public class JpaRentalQueryAdapter implements RentalQueryPort {
     @Transactional(readOnly = true)
     public Optional<RentalInfo> find(Long rentalId) {
         return rentalRepository.findById(rentalId).map(JpaRentalQueryAdapter::toInfo);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Long, RentalInfo> findAll(Collection<Long> rentalIds) {
+        if (rentalIds.isEmpty()) {
+            return Map.of();
+        }
+        return rentalRepository.findAllById(rentalIds).stream()
+                .map(JpaRentalQueryAdapter::toInfo)
+                .collect(Collectors.toMap(RentalInfo::rentalId, Function.identity()));
     }
 
     @Override
@@ -104,7 +119,9 @@ public class JpaRentalQueryAdapter implements RentalQueryPort {
                 rental.getProductNameSnapshot(),
                 rental.getRejectReason(),
                 rental.getStatus(),
-                rental.getTotalPrice()
+                rental.getTotalPrice(),
+                rental.getStartDate(),
+                rental.getEndDate()
         );
     }
 }

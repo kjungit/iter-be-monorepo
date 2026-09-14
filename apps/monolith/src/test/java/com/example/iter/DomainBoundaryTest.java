@@ -45,13 +45,6 @@ class DomainBoundaryTest {
             Pattern.compile("^\\s*import\\s+(?:static\\s+)?com\\.example\\.iter\\.([a-z]+)\\.([\\w.]+);",
                     Pattern.MULTILINE);
 
-    // 마일스톤 2 종료 시점에 남은 것. 전부 JPQL 조인 결과를 담는 타입이라
-    // 포트로는 해결되지 않는다. 3차에서 해당 쿼리를 풀 때 함께 사라진다.
-    private static final Set<String> ALLOWED_ENTITY_LEAKS = Set.of(
-            "payment/service/model/PaymentHistoryRow.java",
-            "payment/dto/response/PaymentHistoryResponse.java"
-    );
-
     @Test
     @DisplayName("도메인은 다른 도메인의 Repository 를 직접 참조하지 않는다")
     void 리포지토리_크로스_참조가_없다() {
@@ -63,10 +56,7 @@ class DomainBoundaryTest {
     void 엔티티와_열거형_크로스_참조가_없다() {
         // 공개해야 하는 열거형은 <domain>.api 로 옮겼다 (RentalStatus, PaymentStatus, PreferredLanguage).
         // 나머지는 의도 기반 포트 메서드 뒤로 숨어 사라졌다.
-        assertThat(crossDomainReferences("domain.entity")).allSatisfy(
-                violation -> assertThat(ALLOWED_ENTITY_LEAKS)
-                        .as("새 위반: %s", violation)
-                        .contains(violation.split(" -> ")[0]));
+        assertThat(crossDomainReferences("domain.entity")).isEmpty();
     }
 
     @Test

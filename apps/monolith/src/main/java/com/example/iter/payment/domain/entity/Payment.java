@@ -22,6 +22,10 @@ import java.util.UUID;
                 @Index(
                         name = "idx_payment_status_created_id",
                         columnList = "status, created_at DESC, id DESC"
+                ),
+                @Index(
+                        name = "idx_payment_renter_created_id",
+                        columnList = "renter_id_snapshot, created_at DESC, id DESC"
                 )
         }
 )
@@ -37,6 +41,10 @@ public class Payment extends BaseTimeEntity {
 
     @Column(name = "rental_id", nullable = false, unique = true)
     private Long rentalId;
+
+    // 결제 시점 대여자 스냅샷 — reservation 도메인 엔티티를 직접 조인하지 않고도 "내 결제 내역"을 조회하기 위함.
+    @Column(name = "renter_id_snapshot", nullable = false)
+    private Long renterIdSnapshot;
 
     @Column(nullable = false)
     private BigDecimal amount;
