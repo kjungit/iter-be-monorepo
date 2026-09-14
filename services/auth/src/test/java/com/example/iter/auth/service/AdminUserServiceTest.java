@@ -14,7 +14,6 @@ import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.common.pagination.CursorCodec;
 import com.example.iter.common.pagination.CursorKey;
-import com.example.iter.device.domain.repository.EquipmentRepository;
 import com.example.iter.dispute.api.ReportQueryPort;
 import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.api.RentalQueryPort;
@@ -52,9 +51,6 @@ class AdminUserServiceTest {
 
     @Mock
     private UserRepository userRepository;
-
-    @Mock
-    private EquipmentRepository equipmentRepository;
 
     @Mock
     private RentalQueryPort rentalQueryPort;

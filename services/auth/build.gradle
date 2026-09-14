@@ -1,5 +1,6 @@
 plugins {
     id 'iter.spring-library-conventions'
+    id 'java-test-fixtures'
 }
 
 description = 'iter 인증/회원 도메인'
@@ -21,4 +22,7 @@ dependencies {
     // 순수 Mockito 단위 테스트뿐이지만, spring-boot-starter-*-test 가 하나도 없으면
     // Mockito 자체가 전이로 들어오지 않는다.
     testImplementation libs.spring.boot.starter.data.jpa.test
+
+    // User 엔티티를 직접 빌드해야 하는 타 도메인 테스트가 testFixtures(project(':services:auth'))로 가져다 쓴다.
+    testFixturesImplementation project(':libs:security')
 }

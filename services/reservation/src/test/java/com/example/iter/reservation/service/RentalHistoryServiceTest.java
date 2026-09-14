@@ -1,18 +1,12 @@
 package com.example.iter.reservation.service;
 
 import com.example.iter.common.security.Role;
-import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
 import com.example.iter.auth.api.UserQueryPort;
 import com.example.iter.auth.api.UserSummary;
 import com.example.iter.common.dto.request.PagingRequest;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
-import com.example.iter.device.domain.entity.Equipment;
-import com.example.iter.device.domain.entity.EquipmentCategory;
-import com.example.iter.device.domain.entity.EquipmentImage;
-import com.example.iter.device.domain.entity.EquipmentStatus;
-import com.example.iter.device.domain.entity.ProductConditionType;
 import com.example.iter.device.api.EquipmentInfo;
 import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.device.api.EquipmentThumbnailQueryPort;
@@ -442,7 +436,7 @@ class RentalHistoryServiceTest {
 
     private EquipmentInfo equipment(Long id, Long ownerId, String name) {
         return new EquipmentInfo(
-                id, ownerId, name, EquipmentCategory.OTHER.name(),
+                id, ownerId, name, "OTHER",
                 BigDecimal.valueOf(99_999), true, false
         );
     }
