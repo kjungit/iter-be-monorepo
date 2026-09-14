@@ -1,10 +1,10 @@
-package com.example.iter.payment.util;
+package com.example.iter.admin.payment.util;
 
-import com.example.iter.payment.dto.response.AdminPaymentDetailResponse;
-import com.example.iter.payment.dto.response.AdminPaymentRentalResponse;
-import com.example.iter.payment.dto.response.AdminPaymentSummaryResponse;
-import com.example.iter.payment.service.model.AdminPaymentDetailRow;
-import com.example.iter.payment.service.model.AdminPaymentSummaryRow;
+import com.example.iter.admin.payment.dto.AdminPaymentDetailResponse;
+import com.example.iter.admin.payment.dto.AdminPaymentRentalResponse;
+import com.example.iter.admin.payment.dto.AdminPaymentSummaryResponse;
+import com.example.iter.admin.payment.model.AdminPaymentDetailRow;
+import com.example.iter.admin.payment.model.AdminPaymentSummaryRow;
 import org.springframework.stereotype.Component;
 
 @Component
