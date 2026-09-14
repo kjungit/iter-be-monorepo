@@ -1,7 +1,9 @@
 package com.example.iter.reservation.api;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 // reservation 이 다른 도메인에게 공개하는 대여 조회 창구.
@@ -16,6 +18,10 @@ public interface RentalQueryPort {
 
     // 대여 한 건. 상태로 거르지 않는다 (취소·완료 건도 그대로 돌려준다).
     Optional<RentalInfo> find(Long rentalId);
+
+    // 여러 건을 한 번에. 못 찾은 ID 는 결과 Map 에서 빠진다.
+    // !! 한 건씩 루프로 호출하지 말 것 !! N+1 이 되고 목킹한 테스트는 통과한다.
+    Map<Long, RentalInfo> findAll(Collection<Long> rentalIds);
 
     // 이 회원의 탈퇴를 막는 대여가 있는가. 빌린 것과 빌려준 것 양쪽을 본다.
     boolean hasWithdrawalBlockingRental(Long userId);

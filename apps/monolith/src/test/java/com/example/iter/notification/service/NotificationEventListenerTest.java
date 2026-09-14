@@ -22,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -67,7 +68,8 @@ class NotificationEventListenerTest {
 
     private RentalInfo rental() {
         return new RentalInfo(RENTAL_ID, EQUIPMENT_ID, RENTER_ID, "소니 A7C2", "일정이 겹칩니다.",
-                RentalStatus.REQUESTED, BigDecimal.valueOf(150000));
+                RentalStatus.REQUESTED, BigDecimal.valueOf(150000),
+                LocalDate.now().plusDays(1), LocalDate.now().plusDays(3));
     }
 
     private UserProfile user(Long id, String email, String name) {

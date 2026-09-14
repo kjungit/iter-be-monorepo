@@ -40,7 +40,9 @@ public class JpaRentalCommandAdapter implements RentalCommandPort {
                             rental.getProductNameSnapshot(),
                             rental.getRejectReason(),
                             rental.getStatus(),
-                            rental.getTotalPrice()
+                            rental.getTotalPrice(),
+                            rental.getStartDate(),
+                            rental.getEndDate()
                     );
                 });
     }

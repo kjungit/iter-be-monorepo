@@ -56,7 +56,11 @@ public class PaymentService {
         String orderId = UUID.randomUUID().toString();
 
         Payment payment = paymentRepository.findByRentalId(rentalId)
-                .orElseGet(() -> Payment.builder().rentalId(rentalId).amount(amount).build());
+                .orElseGet(() -> Payment.builder()
+                        .rentalId(rentalId)
+                        .renterIdSnapshot(rental.renterId())
+                        .amount(amount)
+                        .build());
         payment.assignOrder(orderId, amount);
 
         Payment savedPayment = paymentRepository.save(payment);
