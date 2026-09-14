@@ -11,7 +11,6 @@ import com.example.iter.payment.domain.repository.PaymentRepository;
 import com.example.iter.payment.dto.request.PaymentConfirmRequest;
 import com.example.iter.payment.dto.toss.TossConfirmApiResponse;
 import com.example.iter.payment.event.PaymentConfirmedEvent;
-import com.example.iter.reservation.domain.entity.Rental;
 import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.api.RentalCommandPort;
 import com.example.iter.reservation.api.RentalInfo;

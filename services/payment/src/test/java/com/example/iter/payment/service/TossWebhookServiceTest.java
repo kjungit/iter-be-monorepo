@@ -7,7 +7,6 @@ import com.example.iter.payment.domain.repository.PaymentRepository;
 import com.example.iter.payment.dto.toss.TossConfirmApiResponse;
 import com.example.iter.payment.dto.toss.TossWebhookData;
 import com.example.iter.payment.dto.toss.TossWebhookPayload;
-import com.example.iter.reservation.domain.entity.Rental;
 import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.api.RentalCommandPort;
 import org.junit.jupiter.api.Test;
