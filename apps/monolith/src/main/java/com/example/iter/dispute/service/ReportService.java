@@ -1,8 +1,10 @@
 package com.example.iter.dispute.service;
 
-import com.example.iter.auth.domain.entity.User;
+import com.example.iter.auth.api.UserLockPort;
+import com.example.iter.auth.api.UserLockView;
+import com.example.iter.auth.api.UserQueryPort;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.common.security.UserStatus;
-import com.example.iter.auth.domain.repository.UserRepository;
 import com.example.iter.common.dto.response.PageResponse;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
@@ -25,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 
 @Slf4j
@@ -38,14 +41,15 @@ public class ReportService {
     );
 
     private final ReportRepository reportRepository;
-    private final UserRepository userRepository;
+    private final UserQueryPort userQueryPort;
+    private final UserLockPort userLockPort;
     private final ReportTargetValidator reportTargetValidator;
     private final ReportMapper reportMapper;
 
     // 신고 대상과 처리 중인 중복 신고를 검증한 뒤 신고를 접수합니다.
     @Transactional
     public ReportDetailResponse createReport(Long reporterId, ReportCreateRequest request) {
-        User reporter = getActiveReporterWithLock(reporterId);
+        lockAndValidateReporter(reporterId);
 
         reportTargetValidator.validate(
                 request.targetType(),
@@ -69,13 +73,18 @@ public class ReportService {
                 savedReport.getId(), reporterId, savedReport.getTargetType(),
                 savedReport.getTargetId(), savedReport.getStatus());
 
+        // 락은 "신고해도 되는 회원인가"를 묻고, 닉네임은 응답 표시용이라 조회가 따로다.
+        // 검증에 실패하면 여기까지 오지 않으므로 실패 경로에서는 쿼리가 늘지 않는다.
+        UserSummary reporter = userQueryPort.findSummary(reporterId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
         return reportMapper.toDetail(savedReport, reporter);
     }
 
     // 로그인 사용자가 작성한 신고를 검색 조건과 페이지 정보로 조회합니다.
     @Transactional(readOnly = true)
     public PageResponse<ReportSummaryResponse> getMyReports(Long reporterId, ReportSearchRequest request) {
-        User reporter = userRepository.findById(reporterId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        UserSummary reporter = userQueryPort.findSummary(reporterId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         Page<ReportSummaryResponse> reports = reportRepository.findAll(
                 ReportSpecifications.myReports(reporterId, request.targetType(), request.status()),
@@ -88,25 +97,27 @@ public class ReportService {
     // 로그인 사용자가 작성한 특정 신고의 상세 정보를 조회합니다.
     @Transactional(readOnly = true)
     public ReportDetailResponse getMyReport(Long reporterId, Long reportId) {
-        User reporter = userRepository.findById(reporterId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        UserSummary reporter = userQueryPort.findSummary(reporterId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         Report report = reportRepository.findByIdAndReporterId(reportId, reporterId).orElseThrow(() -> new CustomException(ErrorCode.REPORT_NOT_FOUND));
 
         return reportMapper.toDetail(report, reporter);
     }
 
     // 신고 생성 동시 요청을 직렬화하고 신고자가 현재 이용 가능한 상태인지 검증합니다.
-    private User getActiveReporterWithLock(Long reporterId) {
-        User reporter = userRepository.findWithLockById(reporterId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    private void lockAndValidateReporter(Long reporterId) {
+        UserLockView reporter = userLockPort.lockAll(List.of(reporterId)).get(reporterId);
+        if (reporter == null) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
 
-        if (reporter.getStatus() == UserStatus.SUSPENDED) {
+        // 차단 사유와 에러 코드는 신고 정책이 정한다. 포트는 상태만 돌려준다.
+        if (reporter.status() == UserStatus.SUSPENDED) {
             throw new CustomException(ErrorCode.USER_SUSPENDED);
         }
 
-        if (reporter.getStatus() == UserStatus.DELETED) {
+        if (reporter.status() == UserStatus.DELETED) {
             throw new CustomException(ErrorCode.USER_DELETED);
         }
-
-        return reporter;
     }
 
     // 같은 사용자의 같은 대상 신고가 이미 처리 중이면 신고 생성을 제한합니다.

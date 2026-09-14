@@ -1,17 +1,17 @@
 package com.example.iter.reservation.service;
 
-import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.domain.repository.UserRepository;
+import com.example.iter.reservation.api.RentalStatus;
+import com.example.iter.auth.api.UserQueryPort;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.common.dto.request.PagingRequest;
 import com.example.iter.common.dto.response.PageResponse;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
-import com.example.iter.device.domain.entity.Equipment;
-import com.example.iter.device.domain.entity.EquipmentImage;
-import com.example.iter.device.domain.repository.EquipmentImageRepository;
-import com.example.iter.device.domain.repository.EquipmentRepository;
-import com.example.iter.dispute.domain.entity.Dispute;
-import com.example.iter.dispute.domain.repository.DisputeRepository;
+import com.example.iter.device.api.EquipmentInfo;
+import com.example.iter.device.api.EquipmentQueryPort;
+import com.example.iter.device.api.EquipmentThumbnailQueryPort;
+import com.example.iter.dispute.api.DisputeCommandPort;
+import com.example.iter.dispute.api.ReturnDisputeCommand;
 import com.example.iter.reservation.domain.entity.*;
 import com.example.iter.reservation.domain.repository.*;
 import com.example.iter.reservation.dto.request.ReturnConfirmationRequest;
@@ -39,14 +39,14 @@ import java.util.stream.Collectors;
 public class ReturnService {
 
     private final RentalRepository rentalRepository;
-    private final EquipmentRepository equipmentRepository;
-    private final EquipmentImageRepository equipmentImageRepository;
-    private final UserRepository userRepository;
+    private final EquipmentQueryPort equipmentQueryPort;
+    private final EquipmentThumbnailQueryPort equipmentThumbnailQueryPort;
+    private final UserQueryPort userQueryPort;
     private final ReceiptRepository receiptRepository;
     private final ReceiptImageRepository receiptImageRepository;
     private final ReturnReceiptRepository returnReceiptRepository;
     private final ReturnReceiptImageRepository returnReceiptImageRepository;
-    private final DisputeRepository disputeRepository;
+    private final DisputeCommandPort disputeCommandPort;
     private final ReturnMapper returnMapper;
 
     // 등록자가 최종 반납 확인을 해야 하는 거래 목록을 조회합니다.
@@ -77,11 +77,11 @@ public class ReturnService {
     @Transactional(readOnly = true)
     public ReturnComparisonResponse getReturnComparison(Long userId, Long rentalId) {
         Rental rental = findRental(rentalId);
-        Equipment equipment = findEquipment(rental.getEquipmentId());
+        EquipmentInfo equipment = findEquipment(rental.getEquipmentId());
 
         validateParty(userId, rental, equipment);
 
-        User renter = findUser(rental.getRenterId());
+        UserSummary renter = findUser(rental.getRenterId());
         Receipt receipt = findReceipt(rentalId);
         ReturnReceipt returnReceipt = findReturnReceipt(rentalId);
 
@@ -103,7 +103,7 @@ public class ReturnService {
     @Transactional
     public ReturnConfirmationResponse confirmReturn(Long ownerId, Long rentalId, ReturnConfirmationRequest request) {
         Rental rental = findRentalWithLock(rentalId);
-        Equipment equipment = findEquipment(rental.getEquipmentId());
+        EquipmentInfo equipment = findEquipment(rental.getEquipmentId());
 
         validateOwner(ownerId, equipment);
         validateConfirmationStatus(rental);
@@ -117,18 +117,18 @@ public class ReturnService {
             return returnMapper.toConfirmation(rental, null);
         }
 
-        Dispute dispute = createReturnDispute(rental, ownerId, request);
+        Long disputeId = createReturnDispute(rental, ownerId, request);
 
         rental.openReturnDispute();
         log.info("대여 반납 분쟁 전환 처리: rentalId={}, ownerId={}, disputeId={}, status={}",
-                rentalId, ownerId, dispute.getId(), rental.getStatus());
+                rentalId, ownerId, disputeId, rental.getStatus());
 
         // 장비 상태는 변경하지 않습니다.
         // 장비 등록자가 이후 장비 관리 기능에서 직접 결정합니다.
 
         return returnMapper.toConfirmation(
                 rental,
-                dispute.getId()
+                disputeId
         );
     }
 
@@ -179,12 +179,8 @@ public class ReturnService {
     }
 
     // 대여자 정보를 ID 기준으로 일괄 조회합니다.
-    private Map<Long, User> findRentersById(Set<Long> renterIds) {
-        return userRepository.findAllById(renterIds).stream()
-                .collect(Collectors.toMap(
-                        User::getId,
-                        Function.identity()
-                ));
+    private Map<Long, UserSummary> findRentersById(Set<Long> renterIds) {
+        return userQueryPort.findSummaries(renterIds);
     }
 
     // 반납 증빙을 거래 ID 기준으로 일괄 조회합니다.
@@ -198,19 +194,12 @@ public class ReturnService {
 
     // 장비 썸네일을 장비 ID 기준으로 일괄 조회합니다.
     private Map<Long, String> findThumbnailsByEquipmentId(Set<Long> equipmentIds) {
-        return equipmentImageRepository
-                .findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(equipmentIds)
-                .stream()
-                .collect(Collectors.toMap(
-                        image -> image.getEquipment().getId(),
-                        EquipmentImage::getImageUrl,
-                        (first, ignored) -> first
-                ));
+        return equipmentThumbnailQueryPort.findThumbnailUrls(equipmentIds);
     }
 
     // 거래와 일괄 조회한 데이터를 반납 확인 대상 응답으로 변환합니다.
     private ReturnTargetResponse toReturnTargetResponse(Rental rental, ReturnTargetData data) {
-        User renter = data.rentersById().get(rental.getRenterId());
+        UserSummary renter = data.rentersById().get(rental.getRenterId());
 
         if (renter == null) {
             throw new CustomException(ErrorCode.USER_NOT_FOUND);
@@ -243,14 +232,14 @@ public class ReturnService {
     }
 
     // 장비를 조회합니다.
-    private Equipment findEquipment(Long equipmentId) {
-        return equipmentRepository.findById(equipmentId)
+    private EquipmentInfo findEquipment(Long equipmentId) {
+        return equipmentQueryPort.find(equipmentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
     }
 
     // 회원을 조회합니다.
-    private User findUser(Long userId) {
-        return userRepository.findById(userId)
+    private UserSummary findUser(Long userId) {
+        return userQueryPort.findSummary(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 
@@ -290,23 +279,22 @@ public class ReturnService {
     }
 
     // 비정상 반납에 대한 최소 분쟁을 생성합니다.
-    private Dispute createReturnDispute(
+    private Long createReturnDispute(
             Rental rental,
             Long ownerId,
             ReturnConfirmationRequest request
     ) {
-        return disputeRepository.save(
-                Dispute.builder()
-                        .rentalId(rental.getId())
-                        .reporterId(ownerId)
-                        .respondentId(rental.getRenterId())
-                        .reason(request.disputeReason().trim())
-                        .description(request.disputeDescription().trim())
-                        .build()
-        );
+        // 엔티티 조립은 dispute 가 한다. 여기서는 원시값만 넘긴다.
+        return disputeCommandPort.openReturnDispute(new ReturnDisputeCommand(
+                rental.getId(),
+                ownerId,
+                rental.getRenterId(),
+                request.disputeReason().trim(),
+                request.disputeDescription().trim()
+        ));
     }
 
-    private void validateParty(Long userId, Rental rental, Equipment equipment) {
+    private void validateParty(Long userId, Rental rental, EquipmentInfo equipment) {
         boolean renter = rental.isRenter(userId);
         boolean owner = equipment.isOwnedBy(userId);
 
@@ -316,7 +304,7 @@ public class ReturnService {
     }
 
     // 로그인 사용자가 장비 등록자인지 확인합니다.
-    private void validateOwner(Long ownerId, Equipment equipment) {
+    private void validateOwner(Long ownerId, EquipmentInfo equipment) {
         if (!equipment.isOwnedBy(ownerId)) {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
@@ -335,7 +323,7 @@ public class ReturnService {
 
     // 반납 확인 대상 목록 응답 생성에 필요한 일괄 조회 결과입니다.
     private record ReturnTargetData(
-            Map<Long, User> rentersById,
+            Map<Long, UserSummary> rentersById,
             Map<Long, ReturnReceipt> returnReceiptsByRentalId,
             Map<Long, String> thumbnailsByEquipmentId
     ) {

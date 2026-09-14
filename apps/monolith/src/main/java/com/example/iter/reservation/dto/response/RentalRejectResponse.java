@@ -1,8 +1,8 @@
 package com.example.iter.reservation.dto.response;
 
-import com.example.iter.payment.domain.entity.PaymentStatus;
+import com.example.iter.payment.api.PaymentStatus;
 import com.example.iter.reservation.domain.entity.Rental;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 
 public record RentalRejectResponse(
         Long rentalId,

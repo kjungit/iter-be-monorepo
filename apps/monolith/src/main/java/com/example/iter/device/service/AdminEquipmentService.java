@@ -1,7 +1,7 @@
 package com.example.iter.device.service;
 
-import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.domain.repository.UserRepository;
+import com.example.iter.auth.api.UserQueryPort;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.common.audit.domain.entity.AdminActionTargetType;
 import com.example.iter.common.audit.domain.entity.AdminActionType;
 import com.example.iter.common.audit.service.AdminActionService;
@@ -40,7 +40,7 @@ public class AdminEquipmentService {
 
     private final EquipmentRepository equipmentRepository;
     private final EquipmentImageRepository equipmentImageRepository;
-    private final UserRepository userRepository;
+    private final UserQueryPort userQueryPort;
     private final AdminActionService adminActionService;
     private final AdminEquipmentMapper adminEquipmentMapper;
 
@@ -60,7 +60,7 @@ public class AdminEquipmentService {
                 PageRequest.of(0, request.size() + 1)
         );
 
-        Map<Long, User> ownerMap = loadOwners(equipment);
+        Map<Long, UserSummary> ownerMap = loadOwners(equipment);
         Map<Long, String> thumbnailMap = loadThumbnails(equipment);
 
         return CursorPageResponse.from(
@@ -79,7 +79,7 @@ public class AdminEquipmentService {
     @Transactional(readOnly = true)
     public AdminEquipmentDetailResponse getEquipmentDetail(Long equipmentId) {
         Equipment equipment = equipmentRepository.findById(equipmentId).orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
-        User owner = userRepository.findById(equipment.getOwnerId()).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        UserSummary owner = userQueryPort.findSummary(equipment.getOwnerId()).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         List<EquipmentImage> images = equipmentImageRepository.findByEquipmentIdOrderBySortOrderAsc(equipmentId);
 
         return adminEquipmentMapper.toDetail(equipment, owner, images);
@@ -109,7 +109,7 @@ public class AdminEquipmentService {
         log.info("관리자 장비 상태 변경 처리: adminId={}, equipmentId={}, action={}, status={}",
                 adminId, equipmentId, action, equipment.getStatus());
 
-        User owner = userRepository.findById(equipment.getOwnerId()).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        UserSummary owner = userQueryPort.findSummary(equipment.getOwnerId()).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         List<EquipmentImage> images = equipmentImageRepository.findByEquipmentIdOrderBySortOrderAsc(equipmentId);
 
         return adminEquipmentMapper.toDetail(equipment, owner, images);
@@ -149,7 +149,7 @@ public class AdminEquipmentService {
     }
 
     // 한 페이지에 포함된 장비 등록자를 한 번에 조회해 ID 기준 Map으로 변환합니다.
-    private Map<Long, User> loadOwners(List<Equipment> equipment) {
+    private Map<Long, UserSummary> loadOwners(List<Equipment> equipment) {
         if (equipment.isEmpty()) {
             return Map.of();
         }
@@ -159,7 +159,7 @@ public class AdminEquipmentService {
                 .distinct()
                 .toList();
 
-        return userRepository.findAllById(ownerIds).stream().collect(Collectors.toMap(User::getId, Function.identity()));
+        return userQueryPort.findSummaries(ownerIds);
     }
 
     // 한 페이지에 포함된 장비의 썸네일을 한 번에 조회해 장비 ID 기준 Map으로 변환합니다.
@@ -180,8 +180,8 @@ public class AdminEquipmentService {
     }
 
     // 등록자 Map에서 회원을 찾고 데이터가 없으면 예외를 발생시킵니다.
-    private User getRequiredOwner(Map<Long, User> ownerMap, Long ownerId) {
-        User owner = ownerMap.get(ownerId);
+    private UserSummary getRequiredOwner(Map<Long, UserSummary> ownerMap, Long ownerId) {
+        UserSummary owner = ownerMap.get(ownerId);
 
         if (owner == null) {
             throw new CustomException(ErrorCode.USER_NOT_FOUND);

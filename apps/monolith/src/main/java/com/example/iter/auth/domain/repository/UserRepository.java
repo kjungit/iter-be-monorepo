@@ -1,7 +1,7 @@
 package com.example.iter.auth.domain.repository;
 
 import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.dto.response.UserSummaryResponse;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.common.security.UserStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Pageable;
@@ -22,16 +22,16 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
 
     @Query("""
-            select new com.example.iter.auth.dto.response.UserSummaryResponse(u.id, u.nickname)
+            select new com.example.iter.auth.api.UserSummary(u.id, u.nickname)
             from User u
             where u.id = :id
             """)
-    Optional<UserSummaryResponse> findSummaryById(@Param("id") Long id);
+    Optional<UserSummary> findSummaryById(@Param("id") Long id);
 
     // 받은 대여 요청 목록에 필요한 회원 ID와 닉네임만 한 번에 조회합니다.
-    @Query("SELECT new com.example.iter.auth.dto.response.UserSummaryResponse(u.id, u.nickname) " +
+    @Query("SELECT new com.example.iter.auth.api.UserSummary(u.id, u.nickname) " +
             "FROM User u WHERE u.id IN :ids")
-    List<UserSummaryResponse> findSummariesByIdIn(@Param("ids") Collection<Long> ids);
+    List<UserSummary> findSummariesByIdIn(@Param("ids") Collection<Long> ids);
 
     /**
      * 상태가 null이면 전체 상태를 조회하고, 검색어가 null이면 검색 조건을 적용하지 않습니다.

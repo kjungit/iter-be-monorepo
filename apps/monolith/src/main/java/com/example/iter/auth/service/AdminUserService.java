@@ -18,11 +18,10 @@ import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.common.pagination.CursorCodec;
 import com.example.iter.common.pagination.CursorKey;
-import com.example.iter.device.domain.repository.EquipmentRepository;
-import com.example.iter.dispute.domain.entity.ReportTargetType;
-import com.example.iter.dispute.domain.repository.ReportRepository;
-import com.example.iter.reservation.domain.entity.RentalStatus;
-import com.example.iter.reservation.domain.repository.RentalRepository;
+import com.example.iter.dispute.api.ReportQueryPort;
+import com.example.iter.reservation.api.RentalStatus;
+import com.example.iter.reservation.api.RentalQueryPort;
+import com.example.iter.reservation.api.UserRentalStats;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -41,9 +40,8 @@ import java.util.Set;
 public class AdminUserService {
 
     private final UserRepository userRepository;
-    private final EquipmentRepository equipmentRepository;
-    private final RentalRepository rentalRepository;
-    private final ReportRepository reportRepository;
+    private final RentalQueryPort rentalQueryPort;
+    private final ReportQueryPort reportQueryPort;
     private final AdminActionService adminActionService;
     private final AdminUserMapper adminUserMapper;
 
@@ -101,10 +99,12 @@ public class AdminUserService {
     public AdminUserDetailResponse getUser(Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        long rentedCount = rentalRepository.countByRenterIdAndStatusIn(userId, ESTABLISHED_STATUSES);
-        long lentCount = rentalRepository.countLentByOwnerIdAndStatusIn(userId, ESTABLISHED_STATUSES);
-        long overdueCount = rentalRepository.countByRenterIdAndEndDateBeforeAndStatusIn(userId, LocalDate.now(), OVERDUE_STATUSES);
-        long reportCount = reportRepository.countByTargetTypeAndTargetId(ReportTargetType.USER, userId);
+        // "성사된 거래"와 "연체" 의 정의는 reservation 이 가진다.
+        UserRentalStats rentalStats = rentalQueryPort.countUserRentalStats(userId, LocalDate.now());
+        long rentedCount = rentalStats.rentedCount();
+        long lentCount = rentalStats.lentCount();
+        long overdueCount = rentalStats.overdueCount();
+        long reportCount = reportQueryPort.countAgainstUser(userId);
 
         return adminUserMapper.toDetail(
                 user,

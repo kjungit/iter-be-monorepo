@@ -1,17 +1,19 @@
 package com.example.iter.dispute.service;
 
-import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
-import com.example.iter.auth.domain.repository.UserRepository;
+import com.example.iter.auth.api.UserQueryPort;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.device.domain.entity.Equipment;
 import com.example.iter.device.domain.entity.EquipmentCategory;
 import com.example.iter.device.domain.entity.EquipmentStatus;
-import com.example.iter.device.domain.repository.EquipmentRepository;
+import com.example.iter.device.api.EquipmentInfo;
+import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.dispute.domain.entity.ReportTargetType;
 import com.example.iter.reservation.domain.entity.Rental;
-import com.example.iter.reservation.domain.repository.RentalRepository;
+import com.example.iter.reservation.api.RentalInfo;
+import com.example.iter.reservation.api.RentalStatus;
+import com.example.iter.reservation.api.RentalQueryPort;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -33,13 +35,13 @@ class ReportTargetValidatorTest {
     private static final Long REPORTER_ID = 1L;
 
     @Mock
-    private UserRepository userRepository;
+    private UserQueryPort userQueryPort;
 
     @Mock
-    private EquipmentRepository equipmentRepository;
+    private EquipmentQueryPort equipmentQueryPort;
 
     @Mock
-    private RentalRepository rentalRepository;
+    private RentalQueryPort rentalQueryPort;
 
     @InjectMocks
     private ReportTargetValidator reportTargetValidator;
@@ -55,12 +57,12 @@ class ReportTargetValidatorTest {
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.REPORT_SELF_TARGET_NOT_ALLOWED);
 
-        verifyNoInteractions(userRepository);
+        verifyNoInteractions(userQueryPort);
     }
 
     @Test
     void 존재하지_않거나_탈퇴한_회원은_신고할_수_없다() {
-        when(userRepository.findById(2L)).thenReturn(Optional.empty());
+        when(userQueryPort.isReportable(2L)).thenReturn(false);
 
         assertThatThrownBy(() -> reportTargetValidator.validate(
                 ReportTargetType.USER,
@@ -71,7 +73,7 @@ class ReportTargetValidatorTest {
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
-        when(userRepository.findById(3L)).thenReturn(Optional.of(user(3L, UserStatus.DELETED)));
+        when(userQueryPort.isReportable(3L)).thenReturn(false);
 
         assertThatThrownBy(() -> reportTargetValidator.validate(
                 ReportTargetType.USER,
@@ -85,7 +87,7 @@ class ReportTargetValidatorTest {
 
     @Test
     void 정지된_회원은_신고_대상으로_선택할_수_있다() {
-        when(userRepository.findById(2L)).thenReturn(Optional.of(user(2L, UserStatus.SUSPENDED)));
+        when(userQueryPort.isReportable(2L)).thenReturn(true);
 
         assertThatCode(() -> reportTargetValidator.validate(
                 ReportTargetType.USER,
@@ -96,7 +98,7 @@ class ReportTargetValidatorTest {
 
     @Test
     void 본인_소유_장비는_신고할_수_없다() {
-        when(equipmentRepository.findById(10L))
+        when(equipmentQueryPort.find(10L))
                 .thenReturn(Optional.of(equipment(10L, REPORTER_ID, EquipmentStatus.ACTIVE)));
 
         assertThatThrownBy(() -> reportTargetValidator.validate(
@@ -111,7 +113,7 @@ class ReportTargetValidatorTest {
 
     @Test
     void 삭제된_장비는_신고할_수_없다() {
-        when(equipmentRepository.findById(10L))
+        when(equipmentQueryPort.find(10L))
                 .thenReturn(Optional.of(equipment(10L, 2L, EquipmentStatus.DELETED)));
 
         assertThatThrownBy(() -> reportTargetValidator.validate(
@@ -126,7 +128,7 @@ class ReportTargetValidatorTest {
 
     @Test
     void 타인_소유의_점검중인_장비도_신고할_수_있다() {
-        when(equipmentRepository.findById(10L))
+        when(equipmentQueryPort.find(10L))
                 .thenReturn(Optional.of(equipment(10L, 2L, EquipmentStatus.MAINTENANCE)));
 
         assertThatCode(() -> reportTargetValidator.validate(
@@ -138,10 +140,10 @@ class ReportTargetValidatorTest {
 
     @Test
     void 거래의_대여자와_장비_등록자는_거래를_신고할_수_있다() {
-        Rental renterRental = rental(100L, 10L, REPORTER_ID);
-        Equipment ownerEquipment = equipment(10L, 2L, EquipmentStatus.DELETED);
-        when(rentalRepository.findById(100L)).thenReturn(Optional.of(renterRental));
-        when(equipmentRepository.findById(10L)).thenReturn(Optional.of(ownerEquipment));
+        RentalInfo renterRental = rental(100L, 10L, REPORTER_ID);
+        EquipmentInfo ownerEquipment = equipment(10L, 2L, EquipmentStatus.DELETED);
+        when(rentalQueryPort.find(100L)).thenReturn(Optional.of(renterRental));
+        when(equipmentQueryPort.find(10L)).thenReturn(Optional.of(ownerEquipment));
 
         assertThatCode(() -> reportTargetValidator.validate(
                 ReportTargetType.RENTAL,
@@ -149,10 +151,10 @@ class ReportTargetValidatorTest {
                 REPORTER_ID
         )).doesNotThrowAnyException();
 
-        Rental ownerRental = rental(101L, 11L, 3L);
-        Equipment reporterEquipment = equipment(11L, REPORTER_ID, EquipmentStatus.ACTIVE);
-        when(rentalRepository.findById(101L)).thenReturn(Optional.of(ownerRental));
-        when(equipmentRepository.findById(11L)).thenReturn(Optional.of(reporterEquipment));
+        RentalInfo ownerRental = rental(101L, 11L, 3L);
+        EquipmentInfo reporterEquipment = equipment(11L, REPORTER_ID, EquipmentStatus.ACTIVE);
+        when(rentalQueryPort.find(101L)).thenReturn(Optional.of(ownerRental));
+        when(equipmentQueryPort.find(11L)).thenReturn(Optional.of(reporterEquipment));
 
         assertThatCode(() -> reportTargetValidator.validate(
                 ReportTargetType.RENTAL,
@@ -163,10 +165,10 @@ class ReportTargetValidatorTest {
 
     @Test
     void 거래_제3자는_거래를_신고할_수_없다() {
-        Rental rental = rental(100L, 10L, 2L);
-        Equipment equipment = equipment(10L, 3L, EquipmentStatus.ACTIVE);
-        when(rentalRepository.findById(100L)).thenReturn(Optional.of(rental));
-        when(equipmentRepository.findById(10L)).thenReturn(Optional.of(equipment));
+        RentalInfo rental = rental(100L, 10L, 2L);
+        EquipmentInfo equipment = equipment(10L, 3L, EquipmentStatus.ACTIVE);
+        when(rentalQueryPort.find(100L)).thenReturn(Optional.of(rental));
+        when(equipmentQueryPort.find(10L)).thenReturn(Optional.of(equipment));
 
         assertThatThrownBy(() -> reportTargetValidator.validate(
                 ReportTargetType.RENTAL,
@@ -180,7 +182,7 @@ class ReportTargetValidatorTest {
 
     @Test
     void 존재하지_않는_거래는_신고할_수_없다() {
-        when(rentalRepository.findById(100L)).thenReturn(Optional.empty());
+        when(rentalQueryPort.find(100L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> reportTargetValidator.validate(
                 ReportTargetType.RENTAL,
@@ -191,42 +193,24 @@ class ReportTargetValidatorTest {
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.RENTAL_NOT_FOUND);
 
-        verify(equipmentRepository, never()).findById(10L);
+        verify(equipmentQueryPort, never()).find(10L);
     }
 
-    private User user(Long id, UserStatus status) {
-        return User.builder()
-                .id(id)
-                .email("user" + id + "@iter.test")
-                .password("encoded-password")
-                .name("회원" + id)
-                .status(status)
-                .build();
+
+    private EquipmentInfo equipment(Long id, Long ownerId, EquipmentStatus status) {
+        return new EquipmentInfo(
+                id,
+                ownerId,
+                "테스트 장비",
+                EquipmentCategory.CAMERA.name(),
+                java.math.BigDecimal.valueOf(30000),
+                status == EquipmentStatus.ACTIVE,
+                status == EquipmentStatus.DELETED
+        );
     }
 
-    private Equipment equipment(Long id, Long ownerId, EquipmentStatus status) {
-        return Equipment.builder()
-                .id(id)
-                .ownerId(ownerId)
-                .category(EquipmentCategory.CAMERA)
-                .name("테스트 장비")
-                .dailyPrice(java.math.BigDecimal.valueOf(30000))
-                .status(status)
-                .build();
-    }
-
-    private Rental rental(Long id, Long equipmentId, Long renterId) {
-        return Rental.builder()
-                .id(id)
-                .equipmentId(equipmentId)
-                .renterId(renterId)
-                .startDate(java.time.LocalDate.of(2026, 8, 1))
-                .endDate(java.time.LocalDate.of(2026, 8, 5))
-                .productNameSnapshot("테스트 장비")
-                .categorySnapshot("카메라")
-                .dailyPriceSnapshot(java.math.BigDecimal.valueOf(30000))
-                .rentalDays(5)
-                .totalPrice(java.math.BigDecimal.valueOf(150000))
-                .build();
+    private RentalInfo rental(Long id, Long equipmentId, Long renterId) {
+        return new RentalInfo(id, equipmentId, renterId, "테스트 장비", null,
+                RentalStatus.RENTING, java.math.BigDecimal.valueOf(150000));
     }
 }

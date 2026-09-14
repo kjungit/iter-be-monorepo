@@ -1,9 +1,9 @@
 package com.example.iter.reservation.dto.response;
 
-import com.example.iter.auth.dto.response.UserSummaryResponse;
-import com.example.iter.payment.domain.entity.PaymentStatus;
+import com.example.iter.auth.api.UserSummary;
+import com.example.iter.payment.api.PaymentStatus;
 import com.example.iter.reservation.domain.entity.Rental;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -12,7 +12,7 @@ public record RentalReceivedItemResponse(
         Long rentalId,
         Long equipmentId,
         String productNameSnapshot,
-        UserSummaryResponse renter,
+        UserSummary renter,
         LocalDate startDate,
         LocalDate endDate,
         BigDecimal totalPrice,
@@ -20,7 +20,7 @@ public record RentalReceivedItemResponse(
         String requestMessage,
         RentalStatus status
 ) {
-    public static RentalReceivedItemResponse of(Rental rental, UserSummaryResponse renter, PaymentStatus paymentStatus) {
+    public static RentalReceivedItemResponse of(Rental rental, UserSummary renter, PaymentStatus paymentStatus) {
         return new RentalReceivedItemResponse(
                 rental.getId(),
                 rental.getEquipmentId(),

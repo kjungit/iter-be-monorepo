@@ -1,7 +1,7 @@
 package com.example.iter.dispute.service;
 
-import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.domain.repository.UserRepository;
+import com.example.iter.auth.api.UserQueryPort;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.common.audit.domain.entity.AdminActionTargetType;
 import com.example.iter.common.audit.domain.entity.AdminActionType;
 import com.example.iter.common.audit.service.AdminActionService;
@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 public class AdminReportService {
 
     private final ReportRepository reportRepository;
-    private final UserRepository userRepository;
+    private final UserQueryPort userQueryPort;
     private final AdminActionService adminActionService;
     private final AdminReportMapper adminReportMapper;
 
@@ -52,7 +52,7 @@ public class AdminReportService {
                 PageRequest.of(0, request.size() + 1)
         );
 
-        Map<Long, User> reporterMap = loadReporters(reports);
+        Map<Long, UserSummary> reporterMap = loadReporters(reports);
 
         return CursorPageResponse.from(
                 reports,
@@ -69,7 +69,7 @@ public class AdminReportService {
     @Transactional(readOnly = true)
     public AdminReportDetailResponse getReport(Long reportId) {
         Report report = reportRepository.findById(reportId).orElseThrow(() -> new CustomException(ErrorCode.REPORT_NOT_FOUND));
-        User reporter = userRepository.findById(report.getReporterId()).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        UserSummary reporter = userQueryPort.findSummary(report.getReporterId()).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         return adminReportMapper.toDetail(report, reporter);
     }
@@ -104,7 +104,7 @@ public class AdminReportService {
         log.info("관리자 신고 상태 변경 처리: adminId={}, reportId={}, action={}, status={}",
                 adminId, reportId, action, report.getStatus());
 
-        User reporter = userRepository.findById(report.getReporterId()).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        UserSummary reporter = userQueryPort.findSummary(report.getReporterId()).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         return adminReportMapper.toDetail(report, reporter);
     }
@@ -146,19 +146,19 @@ public class AdminReportService {
     }
 
     // 한 페이지에 포함된 신고자를 한 번에 조회해 회원 ID 기준 Map으로 변환합니다.
-    private Map<Long, User> loadReporters(List<Report> reports) {
+    private Map<Long, UserSummary> loadReporters(List<Report> reports) {
         if (reports.isEmpty()) {
             return Map.of();
         }
 
         List<Long> reporterIds = reports.stream().map(Report::getReporterId).distinct().toList();
 
-        return userRepository.findAllById(reporterIds).stream().collect(Collectors.toMap(User::getId, Function.identity()));
+        return userQueryPort.findSummaries(reporterIds);
     }
 
     // 신고자 Map에서 회원을 찾고 데이터가 없으면 예외를 발생시킵니다.
-    private User getRequiredReporter(Map<Long, User> reporterMap, Long reporterId) {
-        User reporter = reporterMap.get(reporterId);
+    private UserSummary getRequiredReporter(Map<Long, UserSummary> reporterMap, Long reporterId) {
+        UserSummary reporter = reporterMap.get(reporterId);
 
         if (reporter == null) {
             throw new CustomException(ErrorCode.USER_NOT_FOUND);

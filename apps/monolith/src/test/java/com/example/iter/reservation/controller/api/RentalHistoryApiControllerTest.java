@@ -3,7 +3,7 @@ package com.example.iter.reservation.controller.api;
 import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
-import com.example.iter.auth.dto.response.UserSummaryResponse;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.config.RestApiSecurityTestConfig;
 import com.example.iter.common.dto.request.PagingRequest;
 import com.example.iter.common.dto.response.PageResponse;
@@ -11,7 +11,7 @@ import com.example.iter.common.exception.GlobalExceptionHandler;
 import com.example.iter.common.security.CustomUserDetails;
 import com.example.iter.common.security.CustomUserDetailsService;
 import com.example.iter.common.security.JwtTokenProvider;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.dto.request.RentalHistorySearchRequest;
 import com.example.iter.reservation.dto.response.RentalHistoryResponse;
 import com.example.iter.reservation.service.RentalHistoryService;
@@ -227,7 +227,7 @@ class RentalHistoryApiControllerTest {
                 10L,
                 "예약 당시 맥북",
                 "https://example.com/thumbnail.jpg",
-                new UserSummaryResponse(2L, "상대방"),
+                new UserSummary(2L, "상대방"),
                 LocalDate.of(2026, 8, 1),
                 LocalDate.of(2026, 8, 5),
                 BigDecimal.valueOf(150_000),

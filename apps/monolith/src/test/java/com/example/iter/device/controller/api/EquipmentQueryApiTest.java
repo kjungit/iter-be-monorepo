@@ -8,7 +8,7 @@ import com.example.iter.device.domain.entity.ProductConditionType;
 import com.example.iter.device.domain.repository.EquipmentImageRepository;
 import com.example.iter.device.domain.repository.EquipmentRepository;
 import com.example.iter.reservation.domain.entity.Rental;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.domain.repository.RentalRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -1,6 +1,6 @@
 package com.example.iter.auth.dto.request;
 
-import com.example.iter.auth.domain.entity.PreferredLanguage;
+import com.example.iter.auth.api.PreferredLanguage;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
 import jakarta.validation.constraints.AssertTrue;

@@ -3,7 +3,10 @@ package com.example.iter.dispute.service;
 import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
-import com.example.iter.auth.domain.repository.UserRepository;
+import com.example.iter.auth.api.UserLockPort;
+import com.example.iter.auth.api.UserLockView;
+import com.example.iter.auth.api.UserQueryPort;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.dispute.domain.entity.Report;
@@ -26,6 +29,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,7 +54,10 @@ class ReportServiceTest {
     private ReportRepository reportRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private UserQueryPort userQueryPort;
+
+    @Mock
+    private UserLockPort userLockPort;
 
     @Mock
     private ReportTargetValidator reportTargetValidator;
@@ -66,7 +73,10 @@ class ReportServiceTest {
         User reporter = reporter(UserStatus.ACTIVE);
         ReportCreateRequest request = createRequest();
 
-        when(userRepository.findWithLockById(REPORTER_ID)).thenReturn(Optional.of(reporter));
+        when(userLockPort.lockAll(List.of(REPORTER_ID)))
+                .thenReturn(Map.of(REPORTER_ID, new UserLockView(REPORTER_ID, UserStatus.ACTIVE)));
+        when(userQueryPort.findSummary(REPORTER_ID))
+                .thenReturn(Optional.of(new UserSummary(REPORTER_ID, "신고자")));
         when(reportRepository.existsActiveReport(
                 eq(REPORTER_ID),
                 eq(ReportTargetType.EQUIPMENT),
@@ -101,7 +111,10 @@ class ReportServiceTest {
     void ACTIVE_관리자도_일반_신고를_접수할_수_있다() {
         User admin = reporter(UserStatus.ACTIVE, Role.ADMIN);
 
-        when(userRepository.findWithLockById(REPORTER_ID)).thenReturn(Optional.of(admin));
+        when(userLockPort.lockAll(List.of(REPORTER_ID)))
+                .thenReturn(Map.of(REPORTER_ID, new UserLockView(REPORTER_ID, UserStatus.ACTIVE)));
+        when(userQueryPort.findSummary(REPORTER_ID))
+                .thenReturn(Optional.of(new UserSummary(REPORTER_ID, "신고자")));
         when(reportRepository.existsActiveReport(
                 eq(REPORTER_ID),
                 eq(ReportTargetType.EQUIPMENT),
@@ -119,8 +132,8 @@ class ReportServiceTest {
 
     @Test
     void SUSPENDED_회원은_신고를_접수할_수_없다() {
-        when(userRepository.findWithLockById(REPORTER_ID))
-                .thenReturn(Optional.of(reporter(UserStatus.SUSPENDED)));
+        when(userLockPort.lockAll(List.of(REPORTER_ID)))
+                .thenReturn(Map.of(REPORTER_ID, new UserLockView(REPORTER_ID, UserStatus.SUSPENDED)));
 
         assertThatThrownBy(() -> reportService.createReport(REPORTER_ID, createRequest()))
                 .isInstanceOf(CustomException.class)
@@ -132,8 +145,8 @@ class ReportServiceTest {
 
     @Test
     void DELETED_회원은_신고를_접수할_수_없다() {
-        when(userRepository.findWithLockById(REPORTER_ID))
-                .thenReturn(Optional.of(reporter(UserStatus.DELETED)));
+        when(userLockPort.lockAll(List.of(REPORTER_ID)))
+                .thenReturn(Map.of(REPORTER_ID, new UserLockView(REPORTER_ID, UserStatus.DELETED)));
 
         assertThatThrownBy(() -> reportService.createReport(REPORTER_ID, createRequest()))
                 .isInstanceOf(CustomException.class)
@@ -145,8 +158,9 @@ class ReportServiceTest {
 
     @Test
     void 같은_대상에_처리_중인_신고가_있으면_중복_접수할_수_없다() {
-        when(userRepository.findWithLockById(REPORTER_ID))
-                .thenReturn(Optional.of(reporter(UserStatus.ACTIVE)));
+        when(userLockPort.lockAll(List.of(REPORTER_ID)))
+                .thenReturn(Map.of(REPORTER_ID, new UserLockView(REPORTER_ID, UserStatus.ACTIVE)));
+        // 닉네임 조회를 스텁하지 않는다 — 중복으로 걸리면 응답을 조립하지 않으므로 호출되지 않는다.
         when(reportRepository.existsActiveReport(
                 eq(REPORTER_ID),
                 eq(ReportTargetType.EQUIPMENT),
@@ -173,7 +187,8 @@ class ReportServiceTest {
                 20
         );
 
-        when(userRepository.findById(REPORTER_ID)).thenReturn(Optional.of(reporter));
+        when(userQueryPort.findSummary(REPORTER_ID))
+                .thenReturn(Optional.of(new UserSummary(REPORTER_ID, reporter.getNickname())));
         when(reportRepository.findAll(
                 any(Specification.class),
                 any(Pageable.class)
@@ -201,7 +216,8 @@ class ReportServiceTest {
         User reporter = reporter(UserStatus.ACTIVE);
         Report report = report(10L, REPORTER_ID, ReportStatus.UNDER_REVIEW);
 
-        when(userRepository.findById(REPORTER_ID)).thenReturn(Optional.of(reporter));
+        when(userQueryPort.findSummary(REPORTER_ID))
+                .thenReturn(Optional.of(new UserSummary(REPORTER_ID, reporter.getNickname())));
         when(reportRepository.findByIdAndReporterId(10L, REPORTER_ID))
                 .thenReturn(Optional.of(report));
 
@@ -214,8 +230,8 @@ class ReportServiceTest {
 
     @Test
     void 존재하지_않거나_다른_사용자의_신고는_상세_조회할_수_없다() {
-        when(userRepository.findById(REPORTER_ID))
-                .thenReturn(Optional.of(reporter(UserStatus.ACTIVE)));
+        when(userQueryPort.findSummary(REPORTER_ID))
+                .thenReturn(Optional.of(new UserSummary(REPORTER_ID, "신고자")));
         when(reportRepository.findByIdAndReporterId(10L, REPORTER_ID))
                 .thenReturn(Optional.empty());
 

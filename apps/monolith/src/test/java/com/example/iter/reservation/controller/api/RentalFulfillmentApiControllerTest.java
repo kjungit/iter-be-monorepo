@@ -9,7 +9,7 @@ import com.example.iter.common.exception.GlobalExceptionHandler;
 import com.example.iter.common.security.CustomUserDetails;
 import com.example.iter.common.security.CustomUserDetailsService;
 import com.example.iter.common.security.JwtTokenProvider;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.dto.request.ReceiptCreateRequest;
 import com.example.iter.reservation.dto.request.ReturnEvidenceCreateRequest;
 import com.example.iter.reservation.dto.request.ShippingRegisterRequest;

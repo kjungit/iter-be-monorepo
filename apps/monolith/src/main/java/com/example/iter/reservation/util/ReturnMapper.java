@@ -1,7 +1,6 @@
 package com.example.iter.reservation.util;
 
-import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.dto.response.UserSummaryResponse;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.reservation.domain.entity.Receipt;
 import com.example.iter.reservation.domain.entity.Rental;
 import com.example.iter.reservation.domain.entity.ReturnReceipt;
@@ -19,7 +18,7 @@ public class ReturnMapper {
     // 반납 확인 대상 목록 응답으로 변환합니다.
     public ReturnTargetResponse toTarget(
             Rental rental,
-            User renter,
+            UserSummary renter,
             String thumbnailUrl,
             ReturnReceipt returnReceipt
     ) {
@@ -27,7 +26,7 @@ public class ReturnMapper {
                 rental.getId(),
                 rental.getProductNameSnapshot(),
                 thumbnailUrl,
-                toUserSummary(renter),
+                renter,
                 rental.getEndDate(),
                 returnReceipt.getReturnDate()
         );
@@ -36,7 +35,7 @@ public class ReturnMapper {
     // 수령·반납 증빙 비교 응답으로 변환합니다.
     public ReturnComparisonResponse toComparison(
             Rental rental,
-            User renter,
+            UserSummary renter,
             Receipt receipt,
             List<String> receiptImageUrls,
             ReturnReceipt returnReceipt,
@@ -45,7 +44,7 @@ public class ReturnMapper {
         return new ReturnComparisonResponse(
                 rental.getId(),
                 rental.getProductNameSnapshot(),
-                toUserSummary(renter),
+                renter,
                 rental.getStartDate(),
                 rental.getEndDate(),
                 returnReceipt.getReturnDate(),
@@ -89,13 +88,6 @@ public class ReturnMapper {
                 returnReceipt.getConditionDetail(),
                 imageUrls,
                 returnReceipt.getCreatedAt()
-        );
-    }
-
-    private UserSummaryResponse toUserSummary(User user) {
-        return new UserSummaryResponse(
-                user.getId(),
-                user.getNickname()
         );
     }
 

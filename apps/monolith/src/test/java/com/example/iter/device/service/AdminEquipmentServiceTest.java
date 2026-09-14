@@ -3,7 +3,8 @@ package com.example.iter.device.service;
 import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
-import com.example.iter.auth.domain.repository.UserRepository;
+import com.example.iter.auth.api.UserQueryPort;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.common.audit.domain.entity.AdminActionTargetType;
 import com.example.iter.common.audit.domain.entity.AdminActionType;
 import com.example.iter.common.audit.service.AdminActionService;
@@ -34,6 +35,7 @@ import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -62,7 +64,7 @@ class AdminEquipmentServiceTest {
     private EquipmentImageRepository equipmentImageRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private UserQueryPort userQueryPort;
 
     @Mock
     private AdminActionService adminActionService;
@@ -77,7 +79,7 @@ class AdminEquipmentServiceTest {
     void 관리자_장비_목록은_검색어를_정규화하고_등록자와_썸네일을_일괄_조회한다() {
         Equipment first = equipment(EQUIPMENT_ID, OWNER_ID, EquipmentStatus.ACTIVE, "맥북 프로");
         Equipment second = equipment(11L, OWNER_ID, EquipmentStatus.ACTIVE, "맥북 에어");
-        User owner = owner();
+        UserSummary owner = owner();
         EquipmentImage firstThumbnail = image(100L, first, "https://example.com/first.jpg", 1, true);
         EquipmentImage duplicateThumbnail = image(101L, first, "https://example.com/second.jpg", 2, true);
         EquipmentImage secondThumbnail = image(102L, second, "https://example.com/air.jpg", 1, true);
@@ -97,7 +99,7 @@ class AdminEquipmentServiceTest {
                 isNull(),
                 any(Pageable.class)
         )).thenReturn(List.of(first, second));
-        when(userRepository.findAllById(anyCollection())).thenReturn(List.of(owner));
+        when(userQueryPort.findSummaries(anyCollection())).thenReturn(Map.of(OWNER_ID, owner));
         when(equipmentImageRepository
                 .findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(anyCollection()))
                 .thenReturn(List.of(firstThumbnail, duplicateThumbnail, secondThumbnail));
@@ -124,7 +126,7 @@ class AdminEquipmentServiceTest {
         );
         assertThat(pageableCaptor.getValue().getPageNumber()).isZero();
         assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(11);
-        verify(userRepository).findAllById(anyCollection());
+        verify(userQueryPort).findSummaries(anyCollection());
         verify(equipmentImageRepository)
                 .findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(anyCollection());
     }
@@ -146,7 +148,7 @@ class AdminEquipmentServiceTest {
 
         assertThat(response.content()).isEmpty();
         assertThat(response.size()).isEqualTo(20);
-        verify(userRepository, never()).findAllById(anyCollection());
+        verify(userQueryPort, never()).findSummaries(anyCollection());
         verify(equipmentImageRepository, never())
                 .findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(anyCollection());
     }
@@ -182,7 +184,7 @@ class AdminEquipmentServiceTest {
         when(equipmentRepository.searchForAdminByCursor(
                 any(), any(), any(), any(), any(), any(Pageable.class)
         )).thenReturn(List.of(equipment));
-        when(userRepository.findAllById(anyCollection())).thenReturn(List.of());
+        when(userQueryPort.findSummaries(anyCollection())).thenReturn(Map.of());
         when(equipmentImageRepository
                 .findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(anyCollection()))
                 .thenReturn(List.of());
@@ -198,10 +200,10 @@ class AdminEquipmentServiceTest {
     @Test
     void 관리자가_장비_상세와_정렬된_이미지를_조회한다() {
         Equipment equipment = equipment(EQUIPMENT_ID, OWNER_ID, EquipmentStatus.ACTIVE, "맥북 프로");
-        User owner = owner();
+        UserSummary owner = owner();
         EquipmentImage image = image(100L, equipment, "https://example.com/image.jpg", 1, true);
         when(equipmentRepository.findById(EQUIPMENT_ID)).thenReturn(Optional.of(equipment));
-        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner));
+        when(userQueryPort.findSummary(OWNER_ID)).thenReturn(Optional.of(owner));
         when(equipmentImageRepository.findByEquipmentIdOrderBySortOrderAsc(EQUIPMENT_ID))
                 .thenReturn(List.of(image));
 
@@ -224,7 +226,7 @@ class AdminEquipmentServiceTest {
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.EQUIPMENT_NOT_FOUND);
 
-        verifyNoInteractions(userRepository, equipmentImageRepository, adminEquipmentMapper);
+        verifyNoInteractions(userQueryPort, equipmentImageRepository, adminEquipmentMapper);
     }
 
     @ParameterizedTest
@@ -304,7 +306,7 @@ class AdminEquipmentServiceTest {
         assertThat(equipment.getStatus()).isEqualTo(currentStatus);
         verifyNoInteractions(adminActionService);
         verify(equipmentRepository, never()).flush();
-        verifyNoInteractions(userRepository, equipmentImageRepository, adminEquipmentMapper);
+        verifyNoInteractions(userQueryPort, equipmentImageRepository, adminEquipmentMapper);
     }
 
     @Test
@@ -324,13 +326,13 @@ class AdminEquipmentServiceTest {
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.EQUIPMENT_NOT_FOUND);
 
-        verifyNoInteractions(adminActionService, userRepository, equipmentImageRepository, adminEquipmentMapper);
+        verifyNoInteractions(adminActionService, userQueryPort, equipmentImageRepository, adminEquipmentMapper);
     }
 
     private void prepareStatusUpdate(Equipment equipment) {
         when(equipmentRepository.findByIdForUpdate(EQUIPMENT_ID))
                 .thenReturn(Optional.of(equipment));
-        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner()));
+        when(userQueryPort.findSummary(OWNER_ID)).thenReturn(Optional.of(owner()));
         when(equipmentImageRepository.findByEquipmentIdOrderBySortOrderAsc(EQUIPMENT_ID))
                 .thenReturn(List.of());
     }
@@ -356,17 +358,8 @@ class AdminEquipmentServiceTest {
                 .build();
     }
 
-    private User owner() {
-        return User.builder()
-                .id(OWNER_ID)
-                .email("owner@iter.test")
-                .password("encoded-password")
-                .name("장비 등록자")
-                .nickname("등록자")
-                .phone("010-0000-0002")
-                .role(Role.USER)
-                .status(UserStatus.ACTIVE)
-                .build();
+    private UserSummary owner() {
+        return new UserSummary(OWNER_ID, "등록자");
     }
 
     private EquipmentImage image(

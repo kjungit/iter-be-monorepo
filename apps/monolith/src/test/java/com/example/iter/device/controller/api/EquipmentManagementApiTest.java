@@ -22,7 +22,7 @@ import com.example.iter.device.storage.PresignedUpload;
 import com.example.iter.device.storage.StoredImage;
 import com.example.iter.device.storage.ValidatedUpload;
 import com.example.iter.reservation.domain.entity.Rental;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.domain.repository.RentalRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

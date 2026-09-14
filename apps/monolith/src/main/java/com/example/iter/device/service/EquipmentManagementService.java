@@ -2,7 +2,7 @@ package com.example.iter.device.service;
 
 import com.example.iter.common.security.AuthUser;
 import com.example.iter.common.security.UserStatus;
-import com.example.iter.auth.domain.repository.UserRepository;
+import com.example.iter.auth.api.UserQueryPort;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.device.domain.entity.Equipment;
@@ -25,10 +25,8 @@ import com.example.iter.device.storage.EquipmentImageStorage;
 import com.example.iter.device.storage.StoredImage;
 import com.example.iter.device.storage.ValidatedUpload;
 import com.example.iter.device.support.EquipmentImageUrlResolver;
-import com.example.iter.reservation.domain.entity.RentalStatus;
-import com.example.iter.reservation.domain.policy.RentalConflictPolicy;
-import com.example.iter.reservation.domain.policy.RentalStatusPolicy;
-import com.example.iter.reservation.domain.repository.RentalRepository;
+import com.example.iter.reservation.api.RentalStatus;
+import com.example.iter.reservation.api.RentalQueryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -52,8 +50,8 @@ public class EquipmentManagementService {
     private final EquipmentRepository equipmentRepository;
     private final EquipmentImageRepository equipmentImageRepository;
     private final EquipmentImageUploadRepository imageUploadRepository;
-    private final UserRepository userRepository;
-    private final RentalRepository rentalRepository;
+    private final UserQueryPort userQueryPort;
+    private final RentalQueryPort rentalQueryPort;
     private final EquipmentImageStorage imageStorage;
     private final EquipmentImageCleanupService imageCleanupService;
     private final EquipmentImageUrlResolver imageUrlResolver;
@@ -244,11 +242,11 @@ public class EquipmentManagementService {
     public void delete(Long ownerId, Long equipmentId) {
         Equipment equipment = findOwnedForUpdate(equipmentId, ownerId, "본인 소유의 장비만 삭제할 수 있습니다.");
 
-        if (rentalRepository.existsByEquipmentIdAndStatus(equipmentId, RentalStatus.DISPUTED)) {
+        // 어떤 상태가 분쟁·삭제 차단에 해당하는지는 reservation 이 판단한다.
+        if (rentalQueryPort.hasDisputedRental(equipmentId)) {
             throw new CustomException(ErrorCode.ACTIVE_DISPUTE_EXISTS);
         }
-        if (rentalRepository.existsByEquipmentIdAndStatusIn(
-                equipmentId, RentalStatusPolicy.equipmentDeletionBlockingStatuses())) {
+        if (rentalQueryPort.hasDeletionBlockingRental(equipmentId)) {
             throw new CustomException(ErrorCode.ACTIVE_RENTAL_EXISTS);
         }
 
@@ -334,11 +332,8 @@ public class EquipmentManagementService {
     ) {
         boolean periodChanged = !availableFrom.equals(equipment.getAvailableFrom())
                 || !availableTo.equals(equipment.getAvailableTo());
-        if (periodChanged && rentalRepository.existsOccupyingRentalOutsidePeriod(
-                equipment.getId(),
-                availableFrom,
-                availableTo,
-                RentalConflictPolicy.nonOccupyingStatuses())) {
+        if (periodChanged && rentalQueryPort.hasOccupyingRentalOutsidePeriod(
+                equipment.getId(), availableFrom, availableTo)) {
             throw new CustomException(
                     ErrorCode.ACTIVE_RENTAL_EXISTS,
                     "기존 예약을 제외하는 기간으로 대여 가능 기간을 변경할 수 없습니다."
@@ -359,7 +354,7 @@ public class EquipmentManagementService {
     private EquipmentDetailResponse toDetailResponse(Long equipmentId) {
         Equipment equipment = equipmentRepository.findById(equipmentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
-        var owner = userRepository.findSummaryById(equipment.getOwnerId())
+        var owner = userQueryPort.findSummary(equipment.getOwnerId())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         List<EquipmentImageResponse> images = equipmentImageRepository
                 .findByEquipmentIdOrderBySortOrderAscIdAsc(equipmentId)

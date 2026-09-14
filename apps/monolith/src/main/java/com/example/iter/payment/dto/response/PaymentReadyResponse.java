@@ -1,6 +1,6 @@
 package com.example.iter.payment.dto.response;
 
-import com.example.iter.reservation.domain.entity.Rental;
+import com.example.iter.reservation.api.RentalInfo;
 
 import java.math.BigDecimal;
 
@@ -12,14 +12,14 @@ public record PaymentReadyResponse(
         String clientKey,
         String customerKey
 ) {
-    public static PaymentReadyResponse of( Rental rental, String orderId, BigDecimal amount, String clientKey ) {
+    public static PaymentReadyResponse of( RentalInfo rental, String orderId, BigDecimal amount, String clientKey ) {
         return new PaymentReadyResponse(
-                rental.getId(),
+                rental.rentalId(),
                 orderId,
-                rental.getProductNameSnapshot(),
+                rental.productName(),
                 amount,
                 clientKey,
-                "user-" + rental.getRenterId()
+                "user-" + rental.renterId()
         );
     }
 

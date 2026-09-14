@@ -4,10 +4,11 @@ import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.device.domain.entity.Equipment;
 import com.example.iter.device.domain.entity.EquipmentCategory;
-import com.example.iter.device.domain.repository.EquipmentRepository;
+import com.example.iter.device.api.EquipmentInfo;
+import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.reservation.domain.entity.Rental;
 import com.example.iter.reservation.domain.entity.RentalReview;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.domain.repository.RentalRepository;
 import com.example.iter.reservation.domain.repository.RentalReviewRepository;
 import com.example.iter.reservation.dto.request.RentalReviewCreateRequest;
@@ -51,7 +52,7 @@ class RentalReviewServiceTest {
     private RentalRepository rentalRepository;
 
     @Mock
-    private EquipmentRepository equipmentRepository;
+    private EquipmentQueryPort equipmentQueryPort;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -63,7 +64,7 @@ class RentalReviewServiceTest {
     void 반납_완료_상태가_아니면_리뷰_작성시_CONFLICT() {
         Rental rental = rental(RentalStatus.RETURNED);
         when(rentalRepository.findById(RENTAL_ID)).thenReturn(Optional.of(rental));
-        when(equipmentRepository.findById(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
+        when(equipmentQueryPort.find(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
 
         assertThatThrownBy(() -> rentalReviewService.createReview(RENTER_ID, RENTAL_ID, request()))
                 .isInstanceOf(CustomException.class)
@@ -77,7 +78,7 @@ class RentalReviewServiceTest {
     void 이미_작성한_거래에_재작성시_CONFLICT() {
         Rental rental = rental(RentalStatus.COMPLETED);
         when(rentalRepository.findById(RENTAL_ID)).thenReturn(Optional.of(rental));
-        when(equipmentRepository.findById(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
+        when(equipmentQueryPort.find(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
         when(rentalReviewRepository.existsByRentalIdAndReviewerId(RENTAL_ID, RENTER_ID)).thenReturn(true);
 
         assertThatThrownBy(() -> rentalReviewService.createReview(RENTER_ID, RENTAL_ID, request()))
@@ -92,7 +93,7 @@ class RentalReviewServiceTest {
     void 거래_당사자가_아니면_FORBIDDEN() {
         Rental rental = rental(RentalStatus.COMPLETED);
         when(rentalRepository.findById(RENTAL_ID)).thenReturn(Optional.of(rental));
-        when(equipmentRepository.findById(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
+        when(equipmentQueryPort.find(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
 
         assertThatThrownBy(() -> rentalReviewService.createReview(OUTSIDER_ID, RENTAL_ID, request()))
                 .isInstanceOf(CustomException.class)
@@ -106,7 +107,7 @@ class RentalReviewServiceTest {
     void 대여자가_작성하면_대상은_장비등록자다() {
         Rental rental = rental(RentalStatus.COMPLETED);
         when(rentalRepository.findById(RENTAL_ID)).thenReturn(Optional.of(rental));
-        when(equipmentRepository.findById(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
+        when(equipmentQueryPort.find(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
         when(rentalReviewRepository.existsByRentalIdAndReviewerId(RENTAL_ID, RENTER_ID)).thenReturn(false);
         when(rentalReviewRepository.save(any())).thenAnswer(invocation -> {
             var review = invocation.getArgument(0, com.example.iter.reservation.domain.entity.RentalReview.class);
@@ -134,7 +135,7 @@ class RentalReviewServiceTest {
     void 등록자가_작성하면_대상은_대여자다() {
         Rental rental = rental(RentalStatus.COMPLETED);
         when(rentalRepository.findById(RENTAL_ID)).thenReturn(Optional.of(rental));
-        when(equipmentRepository.findById(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
+        when(equipmentQueryPort.find(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
         when(rentalReviewRepository.existsByRentalIdAndReviewerId(RENTAL_ID, OWNER_ID)).thenReturn(false);
         when(rentalReviewRepository.save(any())).thenAnswer(invocation -> {
             var review = invocation.getArgument(0, com.example.iter.reservation.domain.entity.RentalReview.class);
@@ -195,13 +196,15 @@ class RentalReviewServiceTest {
                 .build();
     }
 
-    private Equipment equipment() {
-        return Equipment.builder()
-                .id(EQUIPMENT_ID)
-                .ownerId(OWNER_ID)
-                .category(EquipmentCategory.LAPTOP)
-                .name("현재 장비명")
-                .dailyPrice(BigDecimal.valueOf(50000))
-                .build();
+    private EquipmentInfo equipment() {
+        return new EquipmentInfo(
+                EQUIPMENT_ID,
+                OWNER_ID,
+                "현재 장비명",
+                EquipmentCategory.LAPTOP.name(),
+                BigDecimal.valueOf(50000),
+                true,
+                false
+        );
     }
 }

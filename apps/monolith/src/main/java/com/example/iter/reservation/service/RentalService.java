@@ -1,22 +1,24 @@
 package com.example.iter.reservation.service;
 
-import com.example.iter.auth.domain.entity.User;
+import com.example.iter.auth.api.UserLockPort;
+import com.example.iter.auth.api.UserLockView;
+import com.example.iter.auth.api.UserQueryPort;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.common.security.UserStatus;
-import com.example.iter.auth.domain.repository.UserRepository;
-import com.example.iter.auth.dto.response.UserSummaryResponse;
 import com.example.iter.common.dto.response.PageResponse;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
-import com.example.iter.device.domain.entity.Equipment;
-import com.example.iter.device.domain.repository.EquipmentRepository;
+import com.example.iter.device.api.EquipmentInfo;
+import com.example.iter.device.api.EquipmentLockPort;
+import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.payment.client.TossApiException;
 import com.example.iter.payment.client.TossPaymentClient;
-import com.example.iter.payment.domain.entity.Payment;
-import com.example.iter.payment.domain.entity.PaymentStatus;
-import com.example.iter.payment.domain.repository.PaymentRepository;
+import com.example.iter.payment.api.PaymentStatus;
+import com.example.iter.payment.api.PaymentCommandPort;
+import com.example.iter.payment.api.PaymentQueryPort;
 import com.example.iter.payment.service.model.RentalPaymentStatusRow;
 import com.example.iter.reservation.domain.entity.Rental;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.domain.policy.RentalConflictPolicy;
 import com.example.iter.reservation.domain.repository.RentalRepository;
 import com.example.iter.reservation.dto.request.RentalCreateRequest;
@@ -58,15 +60,18 @@ public class RentalService {
     );
 
     private final RentalRepository rentalRepository;
-    private final EquipmentRepository equipmentRepository;
-    private final UserRepository userRepository;
-    private final PaymentRepository paymentRepository;
+    private final EquipmentQueryPort equipmentQueryPort;
+    private final EquipmentLockPort equipmentLockPort;
+    private final UserQueryPort userQueryPort;
+    private final UserLockPort userLockPort;
+    private final PaymentQueryPort paymentQueryPort;
+    private final PaymentCommandPort paymentCommandPort;
     private final TossPaymentClient tossPaymentClient;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public RentalCreateResponse createRental(Long renterId, RentalCreateRequest request) {
-        Equipment equipment = equipmentRepository.findById(request.equipmentId())
+        EquipmentInfo equipment = equipmentQueryPort.find(request.equipmentId())
                 .orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
 
         if (equipment.isOwnedBy(renterId)) {
@@ -88,11 +93,11 @@ public class RentalService {
 
         // 회원 탈퇴와 신규 대여 생성이 서로 같은 사용자 행 락에 참여하도록 한다.
         // 두 사용자를 항상 ID 오름차순으로 잠가 서로 상대방 장비를 동시에 대여할 때의 데드락도 줄인다.
-        lockAndValidateRentalParticipants(renterId, equipment.getOwnerId());
+        lockAndValidateRentalParticipants(renterId, equipment.ownerId());
 
         // 같은 장비에 대한 동시 요청을 직렬화하기 위해 락을 잡고 재조회 — 선점 방식이라
         // "겹치는지 확인"과 "저장"이 하나의 원자적 구간이어야 두 명이 동시에 같은 기간을 통과시키지 못한다.
-        equipment = equipmentRepository.findByIdForUpdate(equipment.getId())
+        equipment = equipmentLockPort.lockForUpdate(equipment.equipmentId())
                 .orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
 
         if (!equipment.isActive()) {
@@ -100,7 +105,7 @@ public class RentalService {
         }
 
         if (!rentalRepository.findConflictingOccupyingRentalsForUpdate(
-                equipment.getId(),
+                equipment.equipmentId(),
                 startDate,
                 endDate,
                 RentalConflictPolicy.nonOccupyingStatuses()).isEmpty()) {
@@ -108,16 +113,16 @@ public class RentalService {
         }
 
         int rentalDays = (int) ChronoUnit.DAYS.between(startDate, endDate) + 1;
-        BigDecimal totalPrice = equipment.getDailyPrice().multiply(BigDecimal.valueOf(rentalDays));
+        BigDecimal totalPrice = equipment.dailyPrice().multiply(BigDecimal.valueOf(rentalDays));
 
         Rental rental = Rental.builder()
-                .equipmentId(equipment.getId())
+                .equipmentId(equipment.equipmentId())
                 .renterId(renterId)
                 .startDate(startDate)
                 .endDate(endDate)
-                .productNameSnapshot(equipment.getName())
-                .categorySnapshot(equipment.getCategory().name())
-                .dailyPriceSnapshot(equipment.getDailyPrice())
+                .productNameSnapshot(equipment.name())
+                .categorySnapshot(equipment.categoryName())
+                .dailyPriceSnapshot(equipment.dailyPrice())
                 .rentalDays(rentalDays)
                 .totalPrice(totalPrice)
                 .receiverName(request.receiverName())
@@ -137,7 +142,7 @@ public class RentalService {
     @Transactional(readOnly = true)
     public RentalDetailResponse getRentalDetail(Long rentalId, Long currentUserId, boolean isAdmin) {
         Rental rental = getRentalOrThrow(rentalId);
-        Equipment equipment = equipmentRepository.findById(rental.getEquipmentId())
+        EquipmentInfo equipment = equipmentQueryPort.find(rental.getEquipmentId())
                 .orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
 
         boolean isParty = rental.isRenter(currentUserId) || equipment.isOwnedBy(currentUserId);
@@ -145,13 +150,11 @@ public class RentalService {
             throw new CustomException(ErrorCode.RENTAL_NOT_PARTY);
         }
 
-        User renter = userRepository.findById(rental.getRenterId())
+        UserSummary renter = userQueryPort.findSummary(rental.getRenterId())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        User owner = userRepository.findById(equipment.getOwnerId())
+        UserSummary owner = userQueryPort.findSummary(equipment.ownerId())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        PaymentStatus paymentStatus = paymentRepository.findByRentalId(rentalId)
-                .map(Payment::getStatus)
-                .orElse(null);
+        PaymentStatus paymentStatus = paymentQueryPort.findStatusByRentalId(rentalId).orElse(null);
 
         return RentalDetailResponse.of(rental, renter, owner, paymentStatus, overdueDays(rental));
     }
@@ -172,11 +175,11 @@ public class RentalService {
                 )
         );
 
-        Map<Long, UserSummaryResponse> renterMap = loadRenterSummaries(rentals.getContent());
+        Map<Long, UserSummary> renterMap = loadRenterSummaries(rentals.getContent());
         Map<Long, PaymentStatus> paymentStatusMap = loadPaymentStatuses(rentals.getContent());
 
         Page<RentalReceivedItemResponse> response = rentals.map(rental -> {
-            UserSummaryResponse renter = renterMap.get(rental.getRenterId());
+            UserSummary renter = renterMap.get(rental.getRenterId());
             if (renter == null) {
                 throw new CustomException(ErrorCode.USER_NOT_FOUND);
             }
@@ -187,7 +190,7 @@ public class RentalService {
         return PageResponse.from(response);
     }
 
-    private Map<Long, UserSummaryResponse> loadRenterSummaries(List<Rental> rentals) {
+    private Map<Long, UserSummary> loadRenterSummaries(List<Rental> rentals) {
         if (rentals.isEmpty()) {
             return Map.of();
         }
@@ -197,8 +200,7 @@ public class RentalService {
                 .distinct()
                 .toList();
 
-        return userRepository.findSummariesByIdIn(renterIds).stream()
-                .collect(Collectors.toMap(UserSummaryResponse::userId, Function.identity()));
+        return userQueryPort.findSummaries(renterIds);
     }
 
     private Map<Long, PaymentStatus> loadPaymentStatuses(List<Rental> rentals) {
@@ -210,11 +212,7 @@ public class RentalService {
                 .map(Rental::getId)
                 .toList();
 
-        return paymentRepository.findStatusesByRentalIdIn(rentalIds).stream()
-                .collect(Collectors.toMap(
-                        RentalPaymentStatusRow::rentalId,
-                        RentalPaymentStatusRow::paymentStatus
-                ));
+        return paymentQueryPort.findStatusesByRentalIds(rentalIds);
     }
 
     @Transactional
@@ -232,17 +230,14 @@ public class RentalService {
         // "취소했습니다" 알림을 보내면 존재도 몰랐던 요청에 대한 뜬금없는 알림이 된다.
         boolean ownerWasNotified = rental.getStatus() == RentalStatus.REQUESTED;
 
-        Payment payment = paymentRepository.findByRentalId(rentalId).orElse(null);
-        if (payment != null && payment.getStatus() == PaymentStatus.PAID) {
-            cancelTossPayment(payment, "대여 취소");
-        }
+        // 토스 취소 호출·멱등키·환불 기록은 전부 payment 가 한다. 여기서는 결과 상태만 받는다.
+        PaymentStatus paymentStatus = paymentCommandPort.cancelIfPaid(rentalId, "대여 취소").orElse(null);
 
         rental.changeStatus(RentalStatus.CANCELED);
         if (ownerWasNotified) {
             eventPublisher.publishEvent(new RentalCanceledEvent(rental.getId()));
         }
 
-        PaymentStatus paymentStatus = payment != null? payment.getStatus(): null;
         log.info("대여 취소 처리: rentalId={}, actorId={}, actorType={}, status={}, paymentStatus={}",
                 rentalId, currentUserId, isAdmin ? "ADMIN" : "USER", rental.getStatus(), paymentStatus);
 
@@ -252,7 +247,7 @@ public class RentalService {
     @Transactional
     public RentalApproveResponse approveRental(Long rentalId, Long currentUserId, boolean isAdmin) {
         Rental rental = getRentalWithLockOrThrow(rentalId);
-        Equipment equipment = equipmentRepository.findById(rental.getEquipmentId())
+        EquipmentInfo equipment = equipmentQueryPort.find(rental.getEquipmentId())
                 .orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
 
         if (!isAdmin && !equipment.isOwnedBy(currentUserId)) {
@@ -262,7 +257,7 @@ public class RentalService {
             throw new CustomException(ErrorCode.RENTAL_NOT_APPROVABLE);
         }
 
-        equipment = equipmentRepository.findByIdForUpdate(equipment.getId())
+        equipment = equipmentLockPort.lockForUpdate(equipment.equipmentId())
                 .orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
 
         // 1) 락을 잡은 상태에서 재검증 — 요청 이후 관리자가 장비를 중지/삭제시켰다면 승인 불가
@@ -272,7 +267,7 @@ public class RentalService {
 
         // 2) 이 사이 다른 트랜잭션이 먼저 커밋한 확정 예약이 있으면 승인 불가
         if (!rentalRepository.findConflictingOccupyingRentalsForUpdate(
-                equipment.getId(),
+                equipment.equipmentId(),
                 rental.getStartDate(),
                 rental.getEndDate(),
                 RentalConflictPolicy.nonConfirmedStatuses()).isEmpty()) {
@@ -285,7 +280,7 @@ public class RentalService {
         rental.approve();
         eventPublisher.publishEvent(new RentalApprovedEvent(rental.getId()));
         log.info("대여 승인 처리: rentalId={}, equipmentId={}, actorId={}, actorType={}, status={}",
-                rentalId, equipment.getId(), currentUserId, isAdmin ? "ADMIN" : "USER", rental.getStatus());
+                rentalId, equipment.equipmentId(), currentUserId, isAdmin ? "ADMIN" : "USER", rental.getStatus());
 
         return RentalApproveResponse.from(rental);
     }
@@ -293,7 +288,7 @@ public class RentalService {
     @Transactional
     public RentalRejectResponse rejectRental(Long rentalId, Long currentUserId, boolean isAdmin, String reason) {
         Rental rental = getRentalWithLockOrThrow(rentalId);
-        Equipment equipment = equipmentRepository.findById(rental.getEquipmentId())
+        EquipmentInfo equipment = equipmentQueryPort.find(rental.getEquipmentId())
                 .orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
 
         if (!isAdmin && !equipment.isOwnedBy(currentUserId)) {
@@ -303,12 +298,9 @@ public class RentalService {
             throw new CustomException(ErrorCode.RENTAL_ALREADY_PROCESSED);
         }
 
-        rejectAndRefund(rental, reason);
+        // 환불 "후" 상태를 그대로 쓴다. 다시 조회하면 쿼리가 늘 뿐 결과는 같다.
+        PaymentStatus paymentStatus = rejectAndRefund(rental, reason);
         eventPublisher.publishEvent(new RentalRejectedEvent(rental.getId()));
-
-        PaymentStatus paymentStatus = paymentRepository.findByRentalId(rentalId)
-                .map(Payment::getStatus)
-                .orElse(null);
         log.info("대여 거절 처리: rentalId={}, actorId={}, actorType={}, status={}, paymentStatus={}",
                 rentalId, currentUserId, isAdmin ? "ADMIN" : "USER", rental.getStatus(), paymentStatus);
         return RentalRejectResponse.of(rental, paymentStatus);
@@ -321,24 +313,12 @@ public class RentalService {
         return rentalRepository.expirePendingRentals(LocalDateTime.now().minusMinutes(30));
     }
 
-    // 결제 완료건이면 환불하고 예약을 REJECTED로 전환
-    private void rejectAndRefund(Rental rental, String reason) {
-        Payment payment = paymentRepository.findByRentalId(rental.getId()).orElse(null);
-        if (payment != null && payment.getStatus() == PaymentStatus.PAID) {
-            cancelTossPayment(payment, reason);
-        }
+    // 결제 완료건이면 환불하고 예약을 REJECTED 로 전환. 환불 후 상태를 돌려준다.
+    // 토스 취소 실패는 payment 쪽에서 예외로 전파되어 예약도 거절 처리되지 않는다.
+    private PaymentStatus rejectAndRefund(Rental rental, String reason) {
+        PaymentStatus paymentStatus = paymentCommandPort.cancelIfPaid(rental.getId(), reason).orElse(null);
         rental.reject(reason);
-    }
-
-    // 실제 토스 결제 취소 요청 — 실패하면 예약도 취소/거절 처리하지 않도록 예외를 그대로 전파한다
-    // (토스 취소가 안 됐는데 우리 쪽만 취소 처리하면 돈과 상태가 어긋난다).
-    private void cancelTossPayment(Payment payment, String reason) {
-        try {
-            tossPaymentClient.cancel(payment.getPaymentKey(), reason, payment.ensureCancelIdempotencyKey());
-            payment.markRefunded();
-        } catch (TossApiException e) {
-            throw new CustomException(ErrorCode.TOSS_PAYMENT_FAILED);
-        }
+        return paymentStatus;
     }
 
     private Rental getRentalOrThrow(Long rentalId) {
@@ -356,17 +336,18 @@ public class RentalService {
     }
 
     private void lockAndValidateRentalParticipants(Long renterId, Long ownerId) {
-        Long firstId = Math.min(renterId, ownerId);
-        Long secondId = Math.max(renterId, ownerId);
-        User first = findUserWithLock(firstId);
-        User second = findUserWithLock(secondId);
-        User renter = first.getId().equals(renterId) ? first : second;
-        User owner = first.getId().equals(ownerId) ? first : second;
+        // 잠그는 순서(ID 오름차순)는 UserLockPort 구현의 책임이다.
+        // 여기서 순서를 정하면 다른 호출부와 어긋나 데드락이 난다 — RentalCreationDeadlockTest 참고.
+        Map<Long, UserLockView> locked = userLockPort.lockAll(List.of(renterId, ownerId));
 
-        if (renter.getStatus() == UserStatus.SUSPENDED) {
+        UserLockView renter = requireLocked(locked, renterId);
+        UserLockView owner = requireLocked(locked, ownerId);
+
+        // 어떤 상태가 차단 사유이고 어떤 에러 코드를 쓰는지는 이쪽(대여 정책)이 정한다.
+        if (renter.status() == UserStatus.SUSPENDED) {
             throw new CustomException(ErrorCode.USER_SUSPENDED);
         }
-        if (renter.getStatus() == UserStatus.DELETED) {
+        if (renter.status() == UserStatus.DELETED) {
             throw new CustomException(ErrorCode.USER_DELETED);
         }
         if (!owner.isActive()) {
@@ -374,9 +355,12 @@ public class RentalService {
         }
     }
 
-    private User findUserWithLock(Long userId) {
-        return userRepository.findWithLockById(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    private UserLockView requireLocked(Map<Long, UserLockView> locked, Long userId) {
+        UserLockView view = locked.get(userId);
+        if (view == null) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+        return view;
     }
 
     private int overdueDays(Rental rental) {

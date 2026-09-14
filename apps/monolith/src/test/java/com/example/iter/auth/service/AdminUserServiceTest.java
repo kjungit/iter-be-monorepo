@@ -15,10 +15,10 @@ import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.common.pagination.CursorCodec;
 import com.example.iter.common.pagination.CursorKey;
 import com.example.iter.device.domain.repository.EquipmentRepository;
-import com.example.iter.dispute.domain.entity.ReportTargetType;
-import com.example.iter.dispute.domain.repository.ReportRepository;
-import com.example.iter.reservation.domain.entity.RentalStatus;
-import com.example.iter.reservation.domain.repository.RentalRepository;
+import com.example.iter.dispute.api.ReportQueryPort;
+import com.example.iter.reservation.api.RentalStatus;
+import com.example.iter.reservation.api.RentalQueryPort;
+import com.example.iter.reservation.api.UserRentalStats;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -57,10 +57,10 @@ class AdminUserServiceTest {
     private EquipmentRepository equipmentRepository;
 
     @Mock
-    private RentalRepository rentalRepository;
+    private RentalQueryPort rentalQueryPort;
 
     @Mock
-    private ReportRepository reportRepository;
+    private ReportQueryPort reportQueryPort;
 
     @Mock
     private AdminActionService adminActionService;
@@ -128,14 +128,9 @@ class AdminUserServiceTest {
     void 회원_상세에_성립_거래_연체_피신고_건수를_함께_반환한다() {
         User user = user(USER_ID, Role.USER, UserStatus.ACTIVE);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
-        when(rentalRepository.countByRenterIdAndStatusIn(eq(USER_ID), anyCollection())).thenReturn(3L);
-        when(rentalRepository.countLentByOwnerIdAndStatusIn(eq(USER_ID), anyCollection())).thenReturn(4L);
-        when(rentalRepository.countByRenterIdAndEndDateBeforeAndStatusIn(
-                eq(USER_ID),
-                any(LocalDate.class),
-                anyCollection()
-        )).thenReturn(2L);
-        when(reportRepository.countByTargetTypeAndTargetId(ReportTargetType.USER, USER_ID))
+        when(rentalQueryPort.countUserRentalStats(eq(USER_ID), any(LocalDate.class)))
+                .thenReturn(new UserRentalStats(3L, 4L, 2L));
+        when(reportQueryPort.countAgainstUser(USER_ID))
                 .thenReturn(5L);
 
         var response = adminUserService.getUser(USER_ID);
@@ -146,23 +141,9 @@ class AdminUserServiceTest {
         assertThat(response.overdueCount()).isEqualTo(2);
         assertThat(response.reportCount()).isEqualTo(5);
 
-        verify(rentalRepository).countByRenterIdAndStatusIn(
-                eq(USER_ID),
-                org.mockito.ArgumentMatchers.argThat(statuses ->
-                        statuses.contains(RentalStatus.APPROVED)
-                                && statuses.contains(RentalStatus.COMPLETED)
-                                && !statuses.contains(RentalStatus.PENDING)
-                )
-        );
-        verify(rentalRepository).countByRenterIdAndEndDateBeforeAndStatusIn(
-                eq(USER_ID),
-                any(LocalDate.class),
-                org.mockito.ArgumentMatchers.argThat(statuses ->
-                        statuses.size() == 4
-                                && statuses.contains(RentalStatus.RECEIVED)
-                                && statuses.contains(RentalStatus.RETURNING)
-                )
-        );
+        // 어떤 상태가 "성사"·"연체"인지는 reservation 의 정책이다.
+        // 그 검증은 JpaRentalQueryAdapterTest 로 옮겼다.
+        verify(rentalQueryPort).countUserRentalStats(eq(USER_ID), any(LocalDate.class));
     }
 
     @Test
@@ -174,7 +155,7 @@ class AdminUserServiceTest {
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
-        verifyNoInteractions(rentalRepository, reportRepository, adminUserMapper);
+        verifyNoInteractions(rentalQueryPort, reportQueryPort, adminUserMapper);
     }
 
     @Test

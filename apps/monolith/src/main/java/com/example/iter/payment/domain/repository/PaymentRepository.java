@@ -1,7 +1,7 @@
 package com.example.iter.payment.domain.repository;
 
 import com.example.iter.payment.domain.entity.Payment;
-import com.example.iter.payment.domain.entity.PaymentStatus;
+import com.example.iter.payment.api.PaymentStatus;
 import com.example.iter.payment.service.model.PaymentHistoryRow;
 import com.example.iter.payment.service.model.RentalPaymentStatusRow;
 import org.springframework.data.domain.Page;

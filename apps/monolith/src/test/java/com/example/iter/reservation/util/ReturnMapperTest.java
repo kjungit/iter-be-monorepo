@@ -1,10 +1,11 @@
 package com.example.iter.reservation.util;
 
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.reservation.domain.entity.ProductConditionType;
 import com.example.iter.reservation.domain.entity.Receipt;
 import com.example.iter.reservation.domain.entity.Rental;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.domain.entity.ReturnReceipt;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -23,7 +24,7 @@ class ReturnMapperTest {
     @Test
     void 거래와_대여자_반납정보를_반납_확인_대상으로_변환한다() {
         Rental rental = rental(RentalStatus.RETURNED);
-        User renter = renter();
+        UserSummary renter = renter();
         ReturnReceipt returnReceipt = returnReceipt(rental);
 
         var response = returnMapper.toTarget(
@@ -112,14 +113,8 @@ class ReturnMapperTest {
                 .build();
     }
 
-    private User renter() {
-        return User.builder()
-                .id(2L)
-                .email("renter@iter.test")
-                .password("encoded-password")
-                .name("대여자")
-                .nickname("대여자닉네임")
-                .build();
+    private UserSummary renter() {
+        return new UserSummary(2L, "대여자닉네임");
     }
 
     private Receipt receipt(Rental rental) {

@@ -2,14 +2,14 @@ package com.example.iter.payment.service;
 
 import com.example.iter.payment.client.TossPaymentClient;
 import com.example.iter.payment.domain.entity.Payment;
-import com.example.iter.payment.domain.entity.PaymentStatus;
+import com.example.iter.payment.api.PaymentStatus;
 import com.example.iter.payment.domain.repository.PaymentRepository;
 import com.example.iter.payment.dto.toss.TossConfirmApiResponse;
 import com.example.iter.payment.dto.toss.TossWebhookData;
 import com.example.iter.payment.dto.toss.TossWebhookPayload;
 import com.example.iter.reservation.domain.entity.Rental;
-import com.example.iter.reservation.domain.entity.RentalStatus;
-import com.example.iter.reservation.domain.repository.RentalRepository;
+import com.example.iter.reservation.api.RentalStatus;
+import com.example.iter.reservation.api.RentalCommandPort;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -31,7 +31,7 @@ class TossWebhookServiceTest {
     @Mock
     private PaymentRepository paymentRepository;
     @Mock
-    private RentalRepository rentalRepository;
+    private RentalCommandPort rentalCommandPort;
     @Mock
     private TossPaymentClient tossPaymentClient;
 
@@ -56,20 +56,20 @@ class TossWebhookServiceTest {
     @Test
     void 검증된_상태가_DONE이면_PENDING_결제를_PAID로_바꾸고_대여상태도_바꾼다() {
         Payment payment = pendingPayment("order-1");
-        Rental rental = Rental.builder().id(10L).status(RentalStatus.PENDING).build();
         var payload = new TossWebhookPayload("PAYMENT_STATUS_CHANGED",
                 new TossWebhookData("payKey", "order-1", "DONE"));
 
         when(tossPaymentClient.getPayment("payKey"))
                 .thenReturn(new TossConfirmApiResponse("payKey", "order-1", "DONE", "2026-08-18T14:18:34+09:00", 100L));
         when(paymentRepository.findByOrderId("order-1")).thenReturn(Optional.of(payment));
-        when(rentalRepository.findById(10L)).thenReturn(Optional.of(rental));
+
 
         tossWebhookService.handle(payload);
 
         assertThat(payment.getStatus()).isEqualTo(PaymentStatus.PAID);
         assertThat(payment.getPaymentKey()).isEqualTo("payKey");
-        assertThat(rental.getStatus()).isEqualTo(RentalStatus.REQUESTED);
+        // 대여 상태 전환은 reservation 이 한다. 웹훅은 "결제됐다"만 알린다.
+        verify(rentalCommandPort).markPaymentConfirmed(10L);
     }
 
     @Test
@@ -85,7 +85,7 @@ class TossWebhookServiceTest {
 
         tossWebhookService.handle(payload);
 
-        verify(rentalRepository, never()).findById(any());
+        verify(rentalCommandPort, never()).markPaymentConfirmed(any());
     }
 
     @Test
@@ -99,7 +99,7 @@ class TossWebhookServiceTest {
 
         tossWebhookService.handle(payload);
 
-        verify(rentalRepository, never()).findById(any());
+        verify(rentalCommandPort, never()).markPaymentConfirmed(any());
     }
 
     @Test

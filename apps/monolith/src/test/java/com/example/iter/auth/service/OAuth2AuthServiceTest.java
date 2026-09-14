@@ -2,7 +2,7 @@ package com.example.iter.auth.service;
 
 import com.example.iter.auth.domain.entity.OAuthAccount;
 import com.example.iter.auth.domain.entity.OAuthProvider;
-import com.example.iter.auth.domain.entity.PreferredLanguage;
+import com.example.iter.auth.api.PreferredLanguage;
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.auth.domain.repository.OAuthAccountRepository;
 import com.example.iter.auth.domain.repository.OAuthPendingTokenRepository;

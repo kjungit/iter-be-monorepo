@@ -1,7 +1,7 @@
 package com.example.iter.payment.dto.response;
 
 import com.example.iter.payment.domain.entity.Payment;
-import com.example.iter.payment.domain.entity.PaymentStatus;
+import com.example.iter.payment.api.PaymentStatus;
 import com.example.iter.reservation.domain.entity.Rental;
 
 import java.math.BigDecimal;

@@ -1,7 +1,6 @@
 package com.example.iter.device.util;
 
-import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.dto.response.UserSummaryResponse;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.device.domain.entity.Equipment;
 import com.example.iter.device.domain.entity.EquipmentImage;
 import com.example.iter.device.dto.response.AdminEquipmentDetailResponse;
@@ -17,7 +16,7 @@ public class AdminEquipmentMapper {
     // 장비, 등록자, 썸네일을 관리자 장비 목록 응답으로 변환합니다.
     public AdminEquipmentSummaryResponse toSummary(
             Equipment equipment,
-            User owner,
+            UserSummary owner,
             String thumbnailUrl
     ) {
         return new AdminEquipmentSummaryResponse(
@@ -26,7 +25,7 @@ public class AdminEquipmentMapper {
                 equipment.getCategory(),
                 equipment.getDailyPrice(),
                 equipment.getStatus(),
-                UserSummaryResponse.from(owner),
+                owner,
                 thumbnailUrl,
                 equipment.getCreatedAt()
         );
@@ -35,14 +34,14 @@ public class AdminEquipmentMapper {
     // 장비, 등록자, 전체 이미지 목록을 관리자 장비 상세 응답으로 변환합니다.
     public AdminEquipmentDetailResponse toDetail(
             Equipment equipment,
-            User owner,
+            UserSummary owner,
             List<EquipmentImage> images
     ) {
         List<ImageResponse> imageResponses = images.stream().map(this::toImageResponse).toList();
 
         return new AdminEquipmentDetailResponse(
                 equipment.getId(),
-                UserSummaryResponse.from(owner),
+                owner,
                 equipment.getCategory(),
                 equipment.getName(),
                 equipment.getDescription(),
