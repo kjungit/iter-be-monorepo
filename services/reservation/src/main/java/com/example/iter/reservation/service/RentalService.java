@@ -12,12 +12,9 @@ import com.example.iter.device.api.EquipmentInfo;
 import com.example.iter.device.api.EquipmentLockPort;
 import com.example.iter.device.api.EquipmentOccupancyCommandPort;
 import com.example.iter.device.api.EquipmentQueryPort;
-import com.example.iter.payment.client.TossApiException;
-import com.example.iter.payment.client.TossPaymentClient;
 import com.example.iter.payment.api.PaymentStatus;
 import com.example.iter.payment.api.PaymentCommandPort;
 import com.example.iter.payment.api.PaymentQueryPort;
-import com.example.iter.payment.service.model.RentalPaymentStatusRow;
 import com.example.iter.reservation.domain.entity.Rental;
 import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.domain.policy.RentalConflictPolicy;
@@ -68,7 +65,6 @@ public class RentalService {
     private final UserLockPort userLockPort;
     private final PaymentQueryPort paymentQueryPort;
     private final PaymentCommandPort paymentCommandPort;
-    private final TossPaymentClient tossPaymentClient;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional

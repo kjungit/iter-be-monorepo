@@ -1,13 +1,10 @@
 package com.example.iter.reservation.service;
 
-import com.example.iter.auth.domain.entity.User;
 import com.example.iter.auth.api.UserQueryPort;
 import com.example.iter.auth.api.UserSummary;
 import com.example.iter.common.dto.request.PagingRequest;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
-import com.example.iter.device.domain.entity.Equipment;
-import com.example.iter.device.domain.entity.EquipmentCategory;
 import com.example.iter.device.api.EquipmentInfo;
 import com.example.iter.device.api.EquipmentOccupancyCommandPort;
 import com.example.iter.device.api.EquipmentQueryPort;
@@ -373,7 +370,7 @@ class ReturnServiceTest {
 
     private EquipmentInfo equipment() {
         return new EquipmentInfo(
-                EQUIPMENT_ID, OWNER_ID, "현재 장비명", EquipmentCategory.LAPTOP.name(),
+                EQUIPMENT_ID, OWNER_ID, "현재 장비명", "LAPTOP",
                 BigDecimal.valueOf(50000), true, false
         );
     }
