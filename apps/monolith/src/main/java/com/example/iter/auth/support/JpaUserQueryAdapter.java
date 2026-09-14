@@ -5,6 +5,7 @@ import com.example.iter.auth.api.UserQueryPort;
 import com.example.iter.auth.api.UserSummary;
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.auth.domain.repository.UserRepository;
+import com.example.iter.common.security.UserStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,6 +57,14 @@ public class JpaUserQueryAdapter implements UserQueryPort {
         }
         return userRepository.findSummariesByIdIn(userIds).stream()
                 .collect(Collectors.toMap(UserSummary::userId, Function.identity()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isReportable(Long userId) {
+        return userRepository.findById(userId)
+                .map(user -> user.getStatus() != UserStatus.DELETED)
+                .orElse(false);
     }
 
     // 매핑을 UserProfile 의 static 팩터리가 아니라 어댑터에 두는 이유:

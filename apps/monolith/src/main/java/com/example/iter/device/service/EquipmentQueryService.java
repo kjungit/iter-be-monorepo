@@ -1,6 +1,6 @@
 package com.example.iter.device.service;
 
-import com.example.iter.auth.domain.repository.UserRepository;
+import com.example.iter.auth.api.UserQueryPort;
 import com.example.iter.common.security.Role;
 import com.example.iter.common.security.AuthUser;
 import com.example.iter.common.exception.CustomException;
@@ -53,7 +53,7 @@ public class EquipmentQueryService {
 
     private final EquipmentRepository equipmentRepository;
     private final EquipmentImageRepository equipmentImageRepository;
-    private final UserRepository userRepository;
+    private final UserQueryPort userQueryPort;
     private final RentalQueryPort rentalQueryPort;
     private final EquipmentImageUrlResolver imageUrlResolver;
 
@@ -107,7 +107,7 @@ public class EquipmentQueryService {
         if (equipment.getStatus() != EquipmentStatus.ACTIVE && !isOwner) {
             throw new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND);
         }
-        var owner = userRepository.findSummaryById(equipment.getOwnerId())
+        var owner = userQueryPort.findSummary(equipment.getOwnerId())
                 .orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
         List<EquipmentImageResponse> images = equipmentImageRepository
                 .findByEquipmentIdOrderBySortOrderAscIdAsc(equipmentId)

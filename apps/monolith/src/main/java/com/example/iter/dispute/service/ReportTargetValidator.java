@@ -1,8 +1,7 @@
 package com.example.iter.dispute.service;
 
-import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
-import com.example.iter.auth.domain.repository.UserRepository;
+import com.example.iter.auth.api.UserQueryPort;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.device.api.EquipmentInfo;
@@ -17,7 +16,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ReportTargetValidator {
 
-    private final UserRepository userRepository;
+    private final UserQueryPort userQueryPort;
     private final EquipmentQueryPort equipmentQueryPort;
     private final RentalQueryPort rentalQueryPort;
 
@@ -36,9 +35,8 @@ public class ReportTargetValidator {
             throw new CustomException(ErrorCode.REPORT_SELF_TARGET_NOT_ALLOWED);
         }
 
-        User targetUser = userRepository.findById(targetId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-        if (targetUser.getStatus() == UserStatus.DELETED) {
+        // 탈퇴 회원은 "없는 회원"과 같게 취급한다 — 그 판단은 auth 가 한다.
+        if (!userQueryPort.isReportable(targetId)) {
             throw new CustomException(ErrorCode.USER_NOT_FOUND);
         }
     }

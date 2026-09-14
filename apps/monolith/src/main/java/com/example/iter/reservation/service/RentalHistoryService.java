@@ -9,7 +9,6 @@ import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.device.api.EquipmentInfo;
 import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.device.api.EquipmentThumbnailQueryPort;
-import com.example.iter.device.domain.entity.EquipmentImage;
 import com.example.iter.reservation.domain.entity.Rental;
 import com.example.iter.reservation.domain.repository.RentalHistoryRepository;
 import com.example.iter.reservation.domain.repository.spec.RentalSpecifications;
