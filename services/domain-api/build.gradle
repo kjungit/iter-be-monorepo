@@ -1,0 +1,5 @@
+plugins {
+    id 'iter.spring-library-conventions'
+}
+
+description = 'iter 도메인 간 공개 창구(Port) 모음 - 도메인 순환을 끊기 위한 <domain>.api 패키지 전용 모듈'
