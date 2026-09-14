@@ -1,5 +1,6 @@
 [versions]
 spring-boot = "4.1.0"
+kotlin = "2.4.0"
 jjwt = "0.12.6"
 aws-sdk = "2.47.5"
 bouncycastle = "1.82"
