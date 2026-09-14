@@ -44,9 +44,9 @@ class RentalHistoryRepositoryTest {
     @Test
     void 빌린_장비_이력은_해당_대여자의_거래만_조회한다() {
         Equipment equipment = equipment(OWNER_ID, "장비");
-        Rental first = rental(equipment.getId(), RENTER_ID, RentalStatus.COMPLETED, "첫 장비", TODAY);
-        Rental second = rental(equipment.getId(), RENTER_ID, RentalStatus.RENTING, "둘째 장비", TODAY.plusDays(1));
-        rental(equipment.getId(), OTHER_RENTER_ID, RentalStatus.COMPLETED, "다른 회원 장비", TODAY);
+        Rental first = rental(equipment, RENTER_ID, RentalStatus.COMPLETED, "첫 장비", TODAY);
+        Rental second = rental(equipment, RENTER_ID, RentalStatus.RENTING, "둘째 장비", TODAY.plusDays(1));
+        rental(equipment, OTHER_RENTER_ID, RentalStatus.COMPLETED, "다른 회원 장비", TODAY);
 
         var result = rentalHistoryRepository.findAll(
                 RentalSpecifications.borrowedHistory(RENTER_ID, null, null),
@@ -65,21 +65,21 @@ class RentalHistoryRepositoryTest {
     void 빌린_이력은_상태와_예약_당시_장비명으로_검색한다() {
         Equipment equipment = equipment(OWNER_ID, "현재 변경된 카메라 이름");
         Rental matching = rental(
-                equipment.getId(),
+                equipment,
                 RENTER_ID,
                 RentalStatus.COMPLETED,
                 "예약 당시 MacBook Pro 14",
                 TODAY
         );
         rental(
-                equipment.getId(),
+                equipment,
                 RENTER_ID,
                 RentalStatus.RENTING,
                 "예약 당시 MacBook Air",
                 TODAY
         );
         rental(
-                equipment.getId(),
+                equipment,
                 RENTER_ID,
                 RentalStatus.COMPLETED,
                 "예약 당시 Sony Camera",
@@ -106,28 +106,28 @@ class RentalHistoryRepositoryTest {
         Equipment ownerEquipment = equipment(OWNER_ID, "소유자 장비");
         Equipment otherOwnerEquipment = equipment(OTHER_OWNER_ID, "다른 소유자 장비");
         Rental matching = rental(
-                ownerEquipment.getId(),
+                ownerEquipment,
                 RENTER_ID,
                 RentalStatus.RENTING,
                 "Sony A7C 카메라",
                 TODAY.plusDays(1)
         );
         rental(
-                ownerEquipment.getId(),
+                ownerEquipment,
                 RENTER_ID,
                 RentalStatus.COMPLETED,
                 "Sony A7C 카메라",
                 TODAY
         );
         rental(
-                ownerEquipment.getId(),
+                ownerEquipment,
                 RENTER_ID,
                 RentalStatus.RENTING,
                 "MacBook Pro",
                 TODAY.plusDays(1)
         );
         rental(
-                otherOwnerEquipment.getId(),
+                otherOwnerEquipment,
                 RENTER_ID,
                 RentalStatus.RENTING,
                 "Sony A7C 카메라",
@@ -150,21 +150,21 @@ class RentalHistoryRepositoryTest {
     void 장비명_검색에서_퍼센트와_언더스코어를_실제_문자로_처리한다() {
         Equipment equipment = equipment(OWNER_ID, "검색 장비");
         Rental percentMatch = rental(
-                equipment.getId(),
+                equipment,
                 RENTER_ID,
                 RentalStatus.COMPLETED,
                 "할인%카메라",
                 TODAY
         );
         Rental underscoreMatch = rental(
-                equipment.getId(),
+                equipment,
                 RENTER_ID,
                 RentalStatus.COMPLETED,
                 "맥북_프로",
                 TODAY
         );
         rental(
-                equipment.getId(),
+                equipment,
                 RENTER_ID,
                 RentalStatus.COMPLETED,
                 "일반 장비",
@@ -209,14 +209,14 @@ class RentalHistoryRepositoryTest {
     @Test
     void 빌린_장비_연체_이력은_종료일이_지났고_반납이_끝나지_않은_거래만_조회한다() {
         Equipment equipment = equipment(OWNER_ID, "연체 장비");
-        Rental received = rental(equipment.getId(), RENTER_ID, RentalStatus.RECEIVED, "수령", TODAY.minusDays(4));
-        Rental renting = rental(equipment.getId(), RENTER_ID, RentalStatus.RENTING, "대여 중", TODAY.minusDays(3));
-        Rental returnRequested = rental(equipment.getId(), RENTER_ID, RentalStatus.RETURN_REQUESTED, "반납 신청", TODAY.minusDays(2));
-        Rental returning = rental(equipment.getId(), RENTER_ID, RentalStatus.RETURNING, "반송 중", TODAY.minusDays(1));
-        rental(equipment.getId(), RENTER_ID, RentalStatus.RENTING, "오늘 종료", TODAY);
-        rental(equipment.getId(), RENTER_ID, RentalStatus.RETURNED, "도착 확인", TODAY.minusDays(1));
-        rental(equipment.getId(), RENTER_ID, RentalStatus.COMPLETED, "완료", TODAY.minusDays(10));
-        rental(equipment.getId(), OTHER_RENTER_ID, RentalStatus.RENTING, "다른 회원", TODAY.minusDays(5));
+        Rental received = rental(equipment, RENTER_ID, RentalStatus.RECEIVED, "수령", TODAY.minusDays(4));
+        Rental renting = rental(equipment, RENTER_ID, RentalStatus.RENTING, "대여 중", TODAY.minusDays(3));
+        Rental returnRequested = rental(equipment, RENTER_ID, RentalStatus.RETURN_REQUESTED, "반납 신청", TODAY.minusDays(2));
+        Rental returning = rental(equipment, RENTER_ID, RentalStatus.RETURNING, "반송 중", TODAY.minusDays(1));
+        rental(equipment, RENTER_ID, RentalStatus.RENTING, "오늘 종료", TODAY);
+        rental(equipment, RENTER_ID, RentalStatus.RETURNED, "도착 확인", TODAY.minusDays(1));
+        rental(equipment, RENTER_ID, RentalStatus.COMPLETED, "완료", TODAY.minusDays(10));
+        rental(equipment, OTHER_RENTER_ID, RentalStatus.RENTING, "다른 회원", TODAY.minusDays(5));
 
         var result = rentalHistoryRepository.findByRenterIdAndEndDateBeforeAndStatusIn(
                 RENTER_ID,
@@ -240,35 +240,35 @@ class RentalHistoryRepositoryTest {
         Equipment ownerEquipment = equipment(OWNER_ID, "소유 장비");
         Equipment otherOwnerEquipment = equipment(OTHER_OWNER_ID, "다른 장비");
         Rental ownerOverdue = rental(
-                ownerEquipment.getId(),
+                ownerEquipment,
                 RENTER_ID,
                 RentalStatus.RETURNING,
                 "소유 장비 연체",
                 TODAY.minusDays(2)
         );
         rental(
-                ownerEquipment.getId(),
+                ownerEquipment,
                 RENTER_ID,
                 RentalStatus.RETURNED,
                 "이미 반납",
                 TODAY.minusDays(3)
         );
         rental(
-                ownerEquipment.getId(),
+                ownerEquipment,
                 RENTER_ID,
                 RentalStatus.RENTING,
                 "오늘 종료",
                 TODAY
         );
         rental(
-                otherOwnerEquipment.getId(),
+                otherOwnerEquipment,
                 RENTER_ID,
                 RentalStatus.RENTING,
                 "다른 소유자 연체",
                 TODAY.minusDays(5)
         );
 
-        var result = rentalHistoryRepository.findLentOverdueHistory(
+        var result = rentalHistoryRepository.findByOwnerIdSnapshotAndEndDateBeforeAndStatusIn(
                 OWNER_ID,
                 TODAY,
                 RentalOverduePolicy.statuses(),
@@ -283,11 +283,11 @@ class RentalHistoryRepositoryTest {
     @Test
     void 페이지_크기와_전체_건수를_정확히_반환한다() {
         Equipment equipment = equipment(OWNER_ID, "페이지 장비");
-        rental(equipment.getId(), RENTER_ID, RentalStatus.COMPLETED, "장비1", TODAY);
-        rental(equipment.getId(), RENTER_ID, RentalStatus.COMPLETED, "장비2", TODAY);
-        rental(equipment.getId(), RENTER_ID, RentalStatus.COMPLETED, "장비3", TODAY);
-        Rental fourth = rental(equipment.getId(), RENTER_ID, RentalStatus.COMPLETED, "장비4", TODAY);
-        Rental fifth = rental(equipment.getId(), RENTER_ID, RentalStatus.COMPLETED, "장비5", TODAY);
+        rental(equipment, RENTER_ID, RentalStatus.COMPLETED, "장비1", TODAY);
+        rental(equipment, RENTER_ID, RentalStatus.COMPLETED, "장비2", TODAY);
+        rental(equipment, RENTER_ID, RentalStatus.COMPLETED, "장비3", TODAY);
+        Rental fourth = rental(equipment, RENTER_ID, RentalStatus.COMPLETED, "장비4", TODAY);
+        Rental fifth = rental(equipment, RENTER_ID, RentalStatus.COMPLETED, "장비5", TODAY);
 
         var result = rentalHistoryRepository.findAll(
                 RentalSpecifications.borrowedHistory(RENTER_ID, null, null),
@@ -320,7 +320,7 @@ class RentalHistoryRepositoryTest {
     }
 
     private Rental rental(
-            Long equipmentId,
+            Equipment equipment,
             Long renterId,
             RentalStatus status,
             String productNameSnapshot,
@@ -328,7 +328,8 @@ class RentalHistoryRepositoryTest {
     ) {
         return rentalRepository.saveAndFlush(
                 Rental.builder()
-                        .equipmentId(equipmentId)
+                        .equipmentId(equipment.getId())
+                        .ownerIdSnapshot(equipment.getOwnerId())
                         .renterId(renterId)
                         .startDate(endDate.minusDays(2))
                         .endDate(endDate)

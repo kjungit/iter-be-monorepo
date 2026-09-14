@@ -35,7 +35,7 @@ class JpaRentalQueryAdapterTest {
     @Test
     void 성사된_거래_집계는_승인_이후_상태만_포함한다() {
         when(rentalRepository.countByRenterIdAndStatusIn(eq(USER_ID), anyCollection())).thenReturn(3L);
-        when(rentalRepository.countLentByOwnerIdAndStatusIn(eq(USER_ID), anyCollection())).thenReturn(4L);
+        when(rentalRepository.countByOwnerIdSnapshotAndStatusIn(eq(USER_ID), anyCollection())).thenReturn(4L);
         when(rentalRepository.countByRenterIdAndEndDateBeforeAndStatusIn(eq(USER_ID), any(), anyCollection()))
                 .thenReturn(2L);
 
@@ -61,7 +61,7 @@ class JpaRentalQueryAdapterTest {
     @Test
     void 탈퇴_차단은_종료된_거래를_세지_않는다() {
         when(rentalRepository.countByRenterIdAndStatusIn(eq(USER_ID), anyCollection())).thenReturn(0L);
-        when(rentalRepository.countLentByOwnerIdAndStatusIn(eq(USER_ID), anyCollection())).thenReturn(0L);
+        when(rentalRepository.countByOwnerIdSnapshotAndStatusIn(eq(USER_ID), anyCollection())).thenReturn(0L);
 
         assertThat(adapter.hasWithdrawalBlockingRental(USER_ID)).isFalse();
 
@@ -75,7 +75,7 @@ class JpaRentalQueryAdapterTest {
     @Test
     void 빌려준_거래만_남아도_탈퇴를_막는다() {
         when(rentalRepository.countByRenterIdAndStatusIn(eq(USER_ID), anyCollection())).thenReturn(0L);
-        when(rentalRepository.countLentByOwnerIdAndStatusIn(eq(USER_ID), anyCollection())).thenReturn(1L);
+        when(rentalRepository.countByOwnerIdSnapshotAndStatusIn(eq(USER_ID), anyCollection())).thenReturn(1L);
 
         assertThat(adapter.hasWithdrawalBlockingRental(USER_ID)).isTrue();
     }

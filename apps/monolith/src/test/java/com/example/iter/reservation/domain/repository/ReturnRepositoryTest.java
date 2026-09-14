@@ -73,7 +73,7 @@ class ReturnRepositoryTest {
         rentalRepository.saveAndFlush(rental(ownerEquipment, RentalStatus.COMPLETED, "완료 거래"));
         rentalRepository.saveAndFlush(rental(otherEquipment, RentalStatus.RETURNED, "다른 등록자 거래"));
 
-        var result = rentalRepository.findReturnTargetsByOwnerIdAndStatus(
+        var result = rentalRepository.findByOwnerIdSnapshotAndStatus(
                 OWNER_ID,
                 RentalStatus.RETURNED,
                 PageRequest.of(
@@ -96,7 +96,7 @@ class ReturnRepositoryTest {
         rentalRepository.saveAndFlush(rental(equipment, RentalStatus.RETURNED, "반납 2"));
         rentalRepository.saveAndFlush(rental(equipment, RentalStatus.RETURNED, "반납 3"));
 
-        var result = rentalRepository.findReturnTargetsByOwnerIdAndStatus(
+        var result = rentalRepository.findByOwnerIdSnapshotAndStatus(
                 OWNER_ID,
                 RentalStatus.RETURNED,
                 PageRequest.of(0, 2, Sort.by(Sort.Direction.DESC, "id"))
@@ -227,6 +227,7 @@ class ReturnRepositoryTest {
     private Rental rental(Equipment equipment, RentalStatus status, String snapshotName) {
         return Rental.builder()
                 .equipmentId(equipment.getId())
+                .ownerIdSnapshot(equipment.getOwnerId())
                 .renterId(RENTER_ID)
                 .startDate(LocalDate.of(2026, 8, 1))
                 .endDate(LocalDate.of(2026, 8, 10))

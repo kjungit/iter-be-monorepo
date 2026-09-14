@@ -326,7 +326,7 @@ class RentalHistoryServiceTest {
     @Test
     void 빌려준_장비_연체_이력은_등록자_ID로_조회한다() {
         UserSummary renter = user(RENTER_ID, "대여자");
-        when(rentalHistoryRepository.findLentOverdueHistory(
+        when(rentalHistoryRepository.findByOwnerIdSnapshotAndEndDateBeforeAndStatusIn(
                 eq(OWNER_ID),
                 any(LocalDate.class),
                 eq(RentalOverduePolicy.statuses()),
@@ -357,7 +357,7 @@ class RentalHistoryServiceTest {
             assertThat(history.counterparty().userId()).isEqualTo(RENTER_ID);
             assertThat(history.overdueDays()).isEqualTo(2);
         });
-        verify(rentalHistoryRepository).findLentOverdueHistory(
+        verify(rentalHistoryRepository).findByOwnerIdSnapshotAndEndDateBeforeAndStatusIn(
                 eq(OWNER_ID),
                 any(LocalDate.class),
                 eq(RentalOverduePolicy.statuses()),

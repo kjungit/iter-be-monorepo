@@ -144,7 +144,7 @@ class UserWithdrawalApiTest {
         User renter = saveUser(true);
         User owner = saveUser(true);
         Equipment equipment = saveEquipment(owner.getId());
-        saveRental(equipment.getId(), renter.getId(), RentalStatus.RENTING);
+        saveRental(equipment, renter.getId(), RentalStatus.RENTING);
 
         assertActiveRentalBlocksWithdrawal(renter);
     }
@@ -154,7 +154,7 @@ class UserWithdrawalApiTest {
         User owner = saveUser(true);
         User renter = saveUser(true);
         Equipment equipment = saveEquipment(owner.getId());
-        saveRental(equipment.getId(), renter.getId(), RentalStatus.DISPUTED);
+        saveRental(equipment, renter.getId(), RentalStatus.DISPUTED);
 
         assertActiveRentalBlocksWithdrawal(owner);
         assertThat(equipmentRepository.findById(equipment.getId()).orElseThrow().getStatus())
@@ -168,9 +168,9 @@ class UserWithdrawalApiTest {
         Equipment targetEquipment = saveEquipment(target.getId());
         Equipment otherEquipment = saveEquipment(other.getId());
 
-        saveRental(targetEquipment.getId(), other.getId(), RentalStatus.COMPLETED);
-        saveRental(otherEquipment.getId(), target.getId(), RentalStatus.REJECTED);
-        saveRental(otherEquipment.getId(), target.getId(), RentalStatus.CANCELED);
+        saveRental(targetEquipment, other.getId(), RentalStatus.COMPLETED);
+        saveRental(otherEquipment, target.getId(), RentalStatus.REJECTED);
+        saveRental(otherEquipment, target.getId(), RentalStatus.CANCELED);
 
         mockMvc.perform(delete("/api/v1/users/me")
                         .header(HttpHeaders.AUTHORIZATION, bearer(target))
@@ -255,9 +255,10 @@ class UserWithdrawalApiTest {
                 .build());
     }
 
-    private Rental saveRental(Long equipmentId, Long renterId, RentalStatus status) {
+    private Rental saveRental(Equipment equipment, Long renterId, RentalStatus status) {
         return rentalRepository.saveAndFlush(Rental.builder()
-                .equipmentId(equipmentId)
+                .equipmentId(equipment.getId())
+                .ownerIdSnapshot(equipment.getOwnerId())
                 .renterId(renterId)
                 .startDate(LocalDate.now().plusDays(2))
                 .endDate(LocalDate.now().plusDays(4))
