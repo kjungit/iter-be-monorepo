@@ -1,11 +1,15 @@
 package com.example.iter.payment.support;
 
+import com.example.iter.payment.domain.entity.Payment;
 import com.example.iter.payment.domain.repository.PaymentRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigDecimal;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
@@ -30,5 +34,31 @@ class JpaPaymentQueryAdapterTest {
 
         verify(paymentRepository).count();
         verifyNoMoreInteractions(paymentRepository);
+    }
+
+    // "환불됨 = REFUNDED" 판단이 알림 리스너에서 이 어댑터로 옮겨왔다.
+    @Test
+    void 환불된_결제면_true를_돌려준다() {
+        Payment refunded = Payment.builder().rentalId(10L).amount(BigDecimal.valueOf(150000)).build();
+        refunded.markRefunded();
+        when(paymentRepository.findByRentalId(10L)).thenReturn(Optional.of(refunded));
+
+        assertThat(adapter.isRefundedForRental(10L)).isTrue();
+    }
+
+    @Test
+    void 환불되지_않은_결제면_false를_돌려준다() {
+        Payment paid = Payment.builder().rentalId(10L).amount(BigDecimal.valueOf(150000)).build();
+        when(paymentRepository.findByRentalId(10L)).thenReturn(Optional.of(paid));
+
+        assertThat(adapter.isRefundedForRental(10L)).isFalse();
+    }
+
+    // 결제 기록 자체가 없는 경우. 예외를 던지면 알림이 통째로 막힌다.
+    @Test
+    void 결제_기록이_없으면_false를_돌려준다() {
+        when(paymentRepository.findByRentalId(10L)).thenReturn(Optional.empty());
+
+        assertThat(adapter.isRefundedForRental(10L)).isFalse();
     }
 }

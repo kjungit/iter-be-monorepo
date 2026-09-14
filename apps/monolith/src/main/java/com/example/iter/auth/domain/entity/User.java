@@ -1,5 +1,6 @@
 package com.example.iter.auth.domain.entity;
 
+import com.example.iter.auth.api.PreferredLanguage;
 import com.example.iter.common.entity.BaseTimeEntity;
 import com.example.iter.common.security.AuthUser;
 import com.example.iter.common.security.Role;

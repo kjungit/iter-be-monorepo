@@ -1,5 +1,7 @@
 package com.example.iter.auth.api;
 
+import java.util.Optional;
+
 // auth 가 다른 도메인에게 공개하는 회원 조회 창구.
 //
 // 다른 도메인은 UserRepository 나 User 엔티티를 직접 참조하는 대신 이 포트를 쓴다.
@@ -19,4 +21,11 @@ public interface UserQueryPort {
     // 전체 회원 수. 탈퇴 회원을 제외하지 않는다 —
     // 필터를 넣으려면 별도 메서드를 만들 것. 기존 UserRepository.count() 와 동작이 같아야 한다.
     long count();
+
+    // 회원에게 무언가를 보내기 위한 정보. 탈퇴·정지 회원도 그대로 돌려준다.
+    //
+    // 예외를 던지지 않고 Optional 을 돌려주는 이유는 AuthUserLoader 주석과 같다 —
+    // 회원을 못 찾았을 때의 처리가 호출 경로마다 다르다. 알림 리스너는 조용히 건너뛰고,
+    // 다른 호출부는 USER_NOT_FOUND 를 던진다. 포트가 그걸 정하면 한쪽이 바뀐다.
+    Optional<UserProfile> findProfile(Long userId);
 }
