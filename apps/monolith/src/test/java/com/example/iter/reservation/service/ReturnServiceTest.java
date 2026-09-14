@@ -8,9 +8,9 @@ import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
 import com.example.iter.device.domain.entity.Equipment;
 import com.example.iter.device.domain.entity.EquipmentCategory;
-import com.example.iter.device.domain.entity.EquipmentImage;
-import com.example.iter.device.domain.repository.EquipmentImageRepository;
-import com.example.iter.device.domain.repository.EquipmentRepository;
+import com.example.iter.device.api.EquipmentInfo;
+import com.example.iter.device.api.EquipmentQueryPort;
+import com.example.iter.device.api.EquipmentThumbnailQueryPort;
 import com.example.iter.dispute.domain.entity.Dispute;
 import com.example.iter.dispute.domain.repository.DisputeRepository;
 import com.example.iter.reservation.domain.entity.ProductConditionType;
@@ -67,10 +67,10 @@ class ReturnServiceTest {
     private RentalRepository rentalRepository;
 
     @Mock
-    private EquipmentRepository equipmentRepository;
+    private EquipmentQueryPort equipmentQueryPort;
 
     @Mock
-    private EquipmentImageRepository equipmentImageRepository;
+    private EquipmentThumbnailQueryPort equipmentThumbnailQueryPort;
 
     @Mock
     private UserQueryPort userQueryPort;
@@ -109,7 +109,7 @@ class ReturnServiceTest {
         assertThat(response.content()).isEmpty();
         assertThat(response.page()).isZero();
         assertThat(response.size()).isEqualTo(20);
-        verifyNoInteractions(userQueryPort, returnReceiptRepository, equipmentImageRepository, returnMapper);
+        verifyNoInteractions(userQueryPort, returnReceiptRepository, equipmentThumbnailQueryPort, returnMapper);
     }
 
     @Test
@@ -117,14 +117,6 @@ class ReturnServiceTest {
         Rental rental = rental(RentalStatus.RETURNED);
         UserSummary renter = renter();
         ReturnReceipt returnReceipt = returnReceipt(rental);
-        Equipment equipment = equipment();
-        EquipmentImage thumbnail = EquipmentImage.builder()
-                .id(50L)
-                .equipment(equipment)
-                .imageUrl("https://example.com/thumbnail.jpg")
-                .sortOrder(1)
-                .thumbnail(true)
-                .build();
 
         when(rentalRepository.findReturnTargetsByOwnerIdAndStatus(
                 eq(OWNER_ID),
@@ -133,8 +125,8 @@ class ReturnServiceTest {
         )).thenReturn(new PageImpl<>(List.of(rental), PageRequest.of(0, 20), 1));
         when(userQueryPort.findSummaries(any())).thenReturn(Map.of(RENTER_ID, renter));
         when(returnReceiptRepository.findAllByRental_IdIn(any())).thenReturn(List.of(returnReceipt));
-        when(equipmentImageRepository.findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(any()))
-                .thenReturn(List.of(thumbnail));
+        when(equipmentThumbnailQueryPort.findThumbnailUrls(any()))
+                .thenReturn(Map.of(EQUIPMENT_ID, "https://example.com/thumbnail.jpg"));
 
         var response = returnService.getReturnTargets(OWNER_ID, new PagingRequest(0, 20));
 
@@ -162,8 +154,7 @@ class ReturnServiceTest {
                 .thenReturn(new PageImpl<>(List.of(rental)));
         when(userQueryPort.findSummaries(any())).thenReturn(Map.of());
         when(returnReceiptRepository.findAllByRental_IdIn(any())).thenReturn(List.of(returnReceipt(rental)));
-        when(equipmentImageRepository.findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(any()))
-                .thenReturn(List.of());
+        when(equipmentThumbnailQueryPort.findThumbnailUrls(any())).thenReturn(Map.of());
 
         assertThatThrownBy(() -> returnService.getReturnTargets(OWNER_ID, new PagingRequest(0, 20)))
                 .isInstanceOf(CustomException.class)
@@ -202,7 +193,7 @@ class ReturnServiceTest {
     void 거래_제3자는_수령과_반납_증빙을_조회할_수_없다() {
         Rental rental = rental(RentalStatus.RETURNED);
         when(rentalRepository.findById(RENTAL_ID)).thenReturn(Optional.of(rental));
-        when(equipmentRepository.findById(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
+        when(equipmentQueryPort.find(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
 
         assertThatThrownBy(() -> returnService.getReturnComparison(OUTSIDER_ID, RENTAL_ID))
                 .isInstanceOf(CustomException.class)
@@ -216,7 +207,7 @@ class ReturnServiceTest {
     void 수령_증빙이_없으면_비교_조회할_수_없다() {
         Rental rental = rental(RentalStatus.RETURNED);
         when(rentalRepository.findById(RENTAL_ID)).thenReturn(Optional.of(rental));
-        when(equipmentRepository.findById(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
+        when(equipmentQueryPort.find(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
         when(userQueryPort.findSummary(RENTER_ID)).thenReturn(Optional.of(renter()));
         when(receiptRepository.findByRentalId(RENTAL_ID)).thenReturn(Optional.empty());
 
@@ -284,7 +275,7 @@ class ReturnServiceTest {
     void 장비_등록자가_아니면_반납을_최종_확인할_수_없다() {
         Rental rental = rental(RentalStatus.RETURNED);
         when(rentalRepository.findWithLockById(RENTAL_ID)).thenReturn(Optional.of(rental));
-        when(equipmentRepository.findById(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
+        when(equipmentQueryPort.find(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
 
         assertThatThrownBy(() -> returnService.confirmReturn(
                 OUTSIDER_ID,
@@ -304,7 +295,7 @@ class ReturnServiceTest {
         for (RentalStatus status : List.of(RentalStatus.COMPLETED, RentalStatus.DISPUTED)) {
             Rental rental = rental(status);
             when(rentalRepository.findWithLockById(RENTAL_ID)).thenReturn(Optional.of(rental));
-            when(equipmentRepository.findById(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
+            when(equipmentQueryPort.find(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
 
             assertThatThrownBy(() -> returnService.confirmReturn(
                     OWNER_ID,
@@ -321,7 +312,7 @@ class ReturnServiceTest {
     void RETURNED_상태가_아니면_반납을_최종_확인할_수_없다() {
         Rental rental = rental(RentalStatus.RETURNING);
         when(rentalRepository.findWithLockById(RENTAL_ID)).thenReturn(Optional.of(rental));
-        when(equipmentRepository.findById(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
+        when(equipmentQueryPort.find(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
 
         assertThatThrownBy(() -> returnService.confirmReturn(
                 OWNER_ID,
@@ -337,7 +328,7 @@ class ReturnServiceTest {
     void 반납_증빙이_없으면_상태를_변경하지_않는다() {
         Rental rental = rental(RentalStatus.RETURNED);
         when(rentalRepository.findWithLockById(RENTAL_ID)).thenReturn(Optional.of(rental));
-        when(equipmentRepository.findById(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
+        when(equipmentQueryPort.find(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
         when(receiptRepository.findByRentalId(RENTAL_ID)).thenReturn(Optional.of(receipt(rental)));
         when(returnReceiptRepository.findByRentalId(RENTAL_ID)).thenReturn(Optional.empty());
 
@@ -356,7 +347,7 @@ class ReturnServiceTest {
 
     private void stubComparisonData(Rental rental, Receipt receipt, ReturnReceipt returnReceipt) {
         when(rentalRepository.findById(RENTAL_ID)).thenReturn(Optional.of(rental));
-        when(equipmentRepository.findById(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
+        when(equipmentQueryPort.find(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
         when(userQueryPort.findSummary(RENTER_ID)).thenReturn(Optional.of(renter()));
         when(receiptRepository.findByRentalId(RENTAL_ID)).thenReturn(Optional.of(receipt));
         when(returnReceiptRepository.findByRentalId(RENTAL_ID)).thenReturn(Optional.of(returnReceipt));
@@ -364,7 +355,7 @@ class ReturnServiceTest {
 
     private void stubConfirmationData(Rental rental) {
         when(rentalRepository.findWithLockById(RENTAL_ID)).thenReturn(Optional.of(rental));
-        when(equipmentRepository.findById(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
+        when(equipmentQueryPort.find(EQUIPMENT_ID)).thenReturn(Optional.of(equipment()));
         when(receiptRepository.findByRentalId(RENTAL_ID)).thenReturn(Optional.of(receipt(rental)));
         when(returnReceiptRepository.findByRentalId(RENTAL_ID)).thenReturn(Optional.of(returnReceipt(rental)));
     }
@@ -385,14 +376,11 @@ class ReturnServiceTest {
                 .build();
     }
 
-    private Equipment equipment() {
-        return Equipment.builder()
-                .id(EQUIPMENT_ID)
-                .ownerId(OWNER_ID)
-                .category(EquipmentCategory.LAPTOP)
-                .name("현재 장비명")
-                .dailyPrice(BigDecimal.valueOf(50000))
-                .build();
+    private EquipmentInfo equipment() {
+        return new EquipmentInfo(
+                EQUIPMENT_ID, OWNER_ID, "현재 장비명", EquipmentCategory.LAPTOP.name(),
+                BigDecimal.valueOf(50000), true, false
+        );
     }
 
     private UserSummary renter() {

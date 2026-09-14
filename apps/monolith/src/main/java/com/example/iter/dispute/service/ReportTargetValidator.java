@@ -5,9 +5,8 @@ import com.example.iter.common.security.UserStatus;
 import com.example.iter.auth.domain.repository.UserRepository;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
-import com.example.iter.device.domain.entity.Equipment;
-import com.example.iter.device.domain.entity.EquipmentStatus;
-import com.example.iter.device.domain.repository.EquipmentRepository;
+import com.example.iter.device.api.EquipmentInfo;
+import com.example.iter.device.api.EquipmentQueryPort;
 import com.example.iter.dispute.domain.entity.ReportTargetType;
 import com.example.iter.reservation.domain.entity.Rental;
 import com.example.iter.reservation.domain.repository.RentalRepository;
@@ -19,7 +18,7 @@ import org.springframework.stereotype.Component;
 public class ReportTargetValidator {
 
     private final UserRepository userRepository;
-    private final EquipmentRepository equipmentRepository;
+    private final EquipmentQueryPort equipmentQueryPort;
     private final RentalRepository rentalRepository;
 
     // 신고 대상 유형에 맞게 대상 존재 여부와 신고 권한을 검증합니다.
@@ -46,9 +45,9 @@ public class ReportTargetValidator {
 
     // 본인 소유 장비와 삭제된 장비를 신고하지 못하도록 검증합니다.
     private void validateEquipmentTarget(Long targetId, Long reporterId) {
-        Equipment equipment = equipmentRepository.findById(targetId).orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
+        EquipmentInfo equipment = equipmentQueryPort.find(targetId).orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
 
-        if (equipment.getStatus() == EquipmentStatus.DELETED) {
+        if (equipment.deleted()) {
             throw new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND);
         }
 
@@ -61,7 +60,7 @@ public class ReportTargetValidator {
     private void validateRentalTarget(Long targetId, Long reporterId) {
         Rental rental = rentalRepository.findById(targetId).orElseThrow(() -> new CustomException(ErrorCode.RENTAL_NOT_FOUND));
 
-        Equipment equipment = equipmentRepository.findById(rental.getEquipmentId()).orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
+        EquipmentInfo equipment = equipmentQueryPort.find(rental.getEquipmentId()).orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
 
         if (!rental.isRenter(reporterId) && !equipment.isOwnedBy(reporterId)) {
             throw new CustomException(ErrorCode.RENTAL_NOT_PARTY);

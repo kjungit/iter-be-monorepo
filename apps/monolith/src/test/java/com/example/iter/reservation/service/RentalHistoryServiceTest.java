@@ -13,8 +13,9 @@ import com.example.iter.device.domain.entity.EquipmentCategory;
 import com.example.iter.device.domain.entity.EquipmentImage;
 import com.example.iter.device.domain.entity.EquipmentStatus;
 import com.example.iter.device.domain.entity.ProductConditionType;
-import com.example.iter.device.domain.repository.EquipmentImageRepository;
-import com.example.iter.device.domain.repository.EquipmentRepository;
+import com.example.iter.device.api.EquipmentInfo;
+import com.example.iter.device.api.EquipmentQueryPort;
+import com.example.iter.device.api.EquipmentThumbnailQueryPort;
 import com.example.iter.reservation.domain.entity.Rental;
 import com.example.iter.reservation.domain.entity.RentalStatus;
 import com.example.iter.reservation.domain.repository.RentalHistoryRepository;
@@ -63,10 +64,10 @@ class RentalHistoryServiceTest {
     private RentalHistoryRepository rentalHistoryRepository;
 
     @Mock
-    private EquipmentRepository equipmentRepository;
+    private EquipmentQueryPort equipmentQueryPort;
 
     @Mock
-    private EquipmentImageRepository equipmentImageRepository;
+    private EquipmentThumbnailQueryPort equipmentThumbnailQueryPort;
 
     @Mock
     private UserQueryPort userQueryPort;
@@ -88,18 +89,18 @@ class RentalHistoryServiceTest {
                 today.minusDays(3),
                 "예약 당시 맥북"
         );
-        Equipment equipment = equipment(EQUIPMENT_ID, OWNER_ID, "현재 변경된 장비명");
+        EquipmentInfo equipment = equipment(EQUIPMENT_ID, OWNER_ID, "현재 변경된 장비명");
         UserSummary owner = user(OWNER_ID, "등록자");
-        EquipmentImage thumbnail = thumbnail(1L, equipment, "https://example.com/macbook.jpg", 1);
+
 
         when(rentalHistoryRepository.findAll(
                 any(Specification.class),
                 any(Pageable.class)
         )).thenReturn(page(rental));
-        when(equipmentRepository.findAllById(any())).thenReturn(List.of(equipment));
+        when(equipmentQueryPort.findAll(any())).thenReturn(Map.of(equipment.equipmentId(), equipment));
         when(userQueryPort.findSummaries(any())).thenReturn(Map.of(owner.userId(), owner));
-        when(equipmentImageRepository.findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(anyCollection()))
-                .thenReturn(List.of(thumbnail));
+        when(equipmentThumbnailQueryPort.findThumbnailUrls(anyCollection()))
+                .thenReturn(Map.of(EQUIPMENT_ID, "https://example.com/macbook.jpg"));
 
         var response = rentalHistoryService.getBorrowedHistory(
                 RENTER_ID,
@@ -111,7 +112,7 @@ class RentalHistoryServiceTest {
         assertThat(history.rentalId()).isEqualTo(100L);
         assertThat(history.equipmentId()).isEqualTo(EQUIPMENT_ID);
         assertThat(history.equipmentName()).isEqualTo("예약 당시 맥북");
-        assertThat(history.equipmentName()).isNotEqualTo(equipment.getName());
+        assertThat(history.equipmentName()).isNotEqualTo(equipment.name());
         assertThat(history.thumbnailUrl()).isEqualTo("https://example.com/macbook.jpg");
         assertThat(history.counterparty().userId()).isEqualTo(OWNER_ID);
         assertThat(history.counterparty().nickName()).isEqualTo("등록자");
@@ -129,7 +130,7 @@ class RentalHistoryServiceTest {
 
     @Test
     void 빌려준_장비_이력은_대여자를_상대방으로_반환한다() {
-        Equipment equipment = equipment(EQUIPMENT_ID, OWNER_ID, "카메라");
+        EquipmentInfo equipment = equipment(EQUIPMENT_ID, OWNER_ID, "카메라");
         Rental rental = rental(
                 101L,
                 EQUIPMENT_ID,
@@ -147,8 +148,8 @@ class RentalHistoryServiceTest {
                 any(Pageable.class)
         )).thenReturn(page(rental));
         when(userQueryPort.findSummaries(any())).thenReturn(Map.of(renter.userId(), renter));
-        when(equipmentImageRepository.findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(anyCollection()))
-                .thenReturn(List.of(thumbnail(2L, equipment, "https://example.com/camera.jpg", 1)));
+        when(equipmentThumbnailQueryPort.findThumbnailUrls(anyCollection()))
+                .thenReturn(Map.of(EQUIPMENT_ID, "https://example.com/camera.jpg"));
 
         var response = rentalHistoryService.getLentHistory(
                 OWNER_ID,
@@ -162,7 +163,7 @@ class RentalHistoryServiceTest {
             assertThat(history.thumbnailUrl()).isEqualTo("https://example.com/camera.jpg");
             assertThat(history.overdueDays()).isZero();
         });
-        verify(equipmentRepository, never()).findAllById(any());
+        verify(equipmentQueryPort, never()).findAll(any());
     }
 
     @Test
@@ -183,7 +184,7 @@ class RentalHistoryServiceTest {
         assertThat(response.size()).isEqualTo(5);
         assertThat(response.totalElements()).isZero();
         assertThat(response.totalPages()).isZero();
-        verifyNoInteractions(equipmentRepository, equipmentImageRepository, userQueryPort);
+        verifyNoInteractions(equipmentQueryPort, equipmentThumbnailQueryPort, userQueryPort);
         verify(rentalHistoryMapper, never()).toResponse(any(), any(), any(), any(Integer.class));
     }
 
@@ -201,7 +202,7 @@ class RentalHistoryServiceTest {
                 any(Specification.class),
                 any(Pageable.class)
         )).thenReturn(page(rental));
-        when(equipmentRepository.findAllById(any())).thenReturn(List.of());
+        when(equipmentQueryPort.findAll(any())).thenReturn(Map.of());
 
         assertThatThrownBy(() -> rentalHistoryService.getBorrowedHistory(
                 RENTER_ID,
@@ -211,7 +212,7 @@ class RentalHistoryServiceTest {
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.EQUIPMENT_NOT_FOUND);
 
-        verifyNoInteractions(userQueryPort, equipmentImageRepository);
+        verifyNoInteractions(userQueryPort, equipmentThumbnailQueryPort);
     }
 
     @Test
@@ -224,15 +225,15 @@ class RentalHistoryServiceTest {
                 LocalDate.now(),
                 "장비"
         );
-        Equipment equipment = equipment(EQUIPMENT_ID, OWNER_ID, "장비");
+        EquipmentInfo equipment = equipment(EQUIPMENT_ID, OWNER_ID, "장비");
         when(rentalHistoryRepository.findAll(
                 any(Specification.class),
                 any(Pageable.class)
         )).thenReturn(page(rental));
-        when(equipmentRepository.findAllById(any())).thenReturn(List.of(equipment));
+        when(equipmentQueryPort.findAll(any())).thenReturn(Map.of(equipment.equipmentId(), equipment));
         when(userQueryPort.findSummaries(any())).thenReturn(Map.of());
-        when(equipmentImageRepository.findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(anyCollection()))
-                .thenReturn(List.of());
+        when(equipmentThumbnailQueryPort.findThumbnailUrls(anyCollection()))
+                .thenReturn(Map.of());
 
         assertThatThrownBy(() -> rentalHistoryService.getBorrowedHistory(
                 RENTER_ID,
@@ -260,8 +261,8 @@ class RentalHistoryServiceTest {
                 any(Pageable.class)
         )).thenReturn(page(rental));
         when(userQueryPort.findSummaries(any())).thenReturn(Map.of());
-        when(equipmentImageRepository.findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(anyCollection()))
-                .thenReturn(List.of());
+        when(equipmentThumbnailQueryPort.findThumbnailUrls(anyCollection()))
+                .thenReturn(Map.of());
 
         assertThatThrownBy(() -> rentalHistoryService.getLentHistory(
                 OWNER_ID,
@@ -274,7 +275,7 @@ class RentalHistoryServiceTest {
 
     @Test
     void 빌린_장비_연체_이력은_연체_상태와_종료일_순으로_조회한다() {
-        Equipment equipment = equipment(EQUIPMENT_ID, OWNER_ID, "연체 장비");
+        EquipmentInfo equipment = equipment(EQUIPMENT_ID, OWNER_ID, "연체 장비");
         UserSummary owner = user(OWNER_ID, "등록자");
 
         when(rentalHistoryRepository.findByRenterIdAndEndDateBeforeAndStatusIn(
@@ -295,10 +296,10 @@ class RentalHistoryServiceTest {
             );
             return new PageImpl<>(List.of(overdueRental), pageable, 1);
         });
-        when(equipmentRepository.findAllById(any())).thenReturn(List.of(equipment));
+        when(equipmentQueryPort.findAll(any())).thenReturn(Map.of(equipment.equipmentId(), equipment));
         when(userQueryPort.findSummaries(any())).thenReturn(Map.of(owner.userId(), owner));
-        when(equipmentImageRepository.findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(anyCollection()))
-                .thenReturn(List.of());
+        when(equipmentThumbnailQueryPort.findThumbnailUrls(anyCollection()))
+                .thenReturn(Map.of());
 
         var response = rentalHistoryService.getBorrowedOverdueHistory(
                 RENTER_ID,
@@ -344,8 +345,8 @@ class RentalHistoryServiceTest {
             return new PageImpl<>(List.of(overdueRental), pageable, 1);
         });
         when(userQueryPort.findSummaries(any())).thenReturn(Map.of(renter.userId(), renter));
-        when(equipmentImageRepository.findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(anyCollection()))
-                .thenReturn(List.of());
+        when(equipmentThumbnailQueryPort.findThumbnailUrls(anyCollection()))
+                .thenReturn(Map.of());
 
         var response = rentalHistoryService.getLentOverdueHistory(
                 OWNER_ID,
@@ -366,8 +367,8 @@ class RentalHistoryServiceTest {
 
     @Test
     void 여러_빌린_이력도_장비_회원_썸네일을_각각_한_번만_일괄_조회한다() {
-        Equipment firstEquipment = equipment(10L, 2L, "첫 장비");
-        Equipment secondEquipment = equipment(20L, 3L, "둘째 장비");
+        EquipmentInfo firstEquipment = equipment(10L, 2L, "첫 장비");
+        EquipmentInfo secondEquipment = equipment(20L, 3L, "둘째 장비");
         Rental firstRental = rental(
                 201L,
                 10L,
@@ -389,14 +390,14 @@ class RentalHistoryServiceTest {
                 any(Specification.class),
                 any(Pageable.class)
         )).thenReturn(new PageImpl<>(List.of(firstRental, secondRental), PageRequest.of(0, 20), 2));
-        when(equipmentRepository.findAllById(any())).thenReturn(List.of(firstEquipment, secondEquipment));
+        when(equipmentQueryPort.findAll(any())).thenReturn(Map.of(
+                firstEquipment.equipmentId(), firstEquipment,
+                secondEquipment.equipmentId(), secondEquipment));
         when(userQueryPort.findSummaries(any())).thenReturn(Map.of(2L, user(2L, "첫 등록자"), 3L, user(3L, "둘째 등록자")));
-        when(equipmentImageRepository.findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(anyCollection()))
-                .thenReturn(List.of(
-                        thumbnail(1L, firstEquipment, "first-old.jpg", 1),
-                        thumbnail(2L, firstEquipment, "first-new.jpg", 2),
-                        thumbnail(3L, secondEquipment, "second.jpg", 1)
-                ));
+        // 장비마다 대표 썸네일을 고르는 규칙(sortOrder 가 앞선 것이 이김)은
+        // JpaEquipmentThumbnailQueryAdapterTest 로 옮겼다. 여기서는 포트가 준 값을 그대로 쓰는지만 본다.
+        when(equipmentThumbnailQueryPort.findThumbnailUrls(anyCollection()))
+                .thenReturn(Map.of(10L, "first-old.jpg", 20L, "second.jpg"));
 
         var response = rentalHistoryService.getBorrowedHistory(
                 RENTER_ID,
@@ -406,10 +407,10 @@ class RentalHistoryServiceTest {
         assertThat(response.content()).hasSize(2);
         assertThat(response.content().get(0).thumbnailUrl()).isEqualTo("first-old.jpg");
         assertThat(response.content().get(1).thumbnailUrl()).isEqualTo("second.jpg");
-        verify(equipmentRepository, times(1)).findAllById(any());
+        verify(equipmentQueryPort, times(1)).findAll(any());
         verify(userQueryPort, times(1)).findSummaries(any());
-        verify(equipmentImageRepository, times(1))
-                .findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(anyCollection());
+        verify(equipmentThumbnailQueryPort, times(1))
+                .findThumbnailUrls(anyCollection());
     }
 
     private Page<Rental> page(Rental rental) {
@@ -439,36 +440,17 @@ class RentalHistoryServiceTest {
                 .build();
     }
 
-    private Equipment equipment(Long id, Long ownerId, String name) {
-        return Equipment.builder()
-                .id(id)
-                .ownerId(ownerId)
-                .category(EquipmentCategory.OTHER)
-                .name(name)
-                .dailyPrice(BigDecimal.valueOf(99_999))
-                .status(EquipmentStatus.ACTIVE)
-                .productCondition(ProductConditionType.NORMAL)
-                .build();
+    private EquipmentInfo equipment(Long id, Long ownerId, String name) {
+        return new EquipmentInfo(
+                id, ownerId, name, EquipmentCategory.OTHER.name(),
+                BigDecimal.valueOf(99_999), true, false
+        );
     }
 
     private UserSummary user(Long id, String nickname) {
         return new UserSummary(id, nickname);
     }
 
-    private EquipmentImage thumbnail(
-            Long id,
-            Equipment equipment,
-            String imageUrl,
-            int sortOrder
-    ) {
-        return EquipmentImage.builder()
-                .id(id)
-                .equipment(equipment)
-                .imageUrl(imageUrl)
-                .sortOrder(sortOrder)
-                .thumbnail(true)
-                .build();
-    }
 
     private List<String> sortDescription(Pageable pageable) {
         return pageable.getSort().stream()

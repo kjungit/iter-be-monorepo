@@ -6,10 +6,9 @@ import com.example.iter.common.dto.request.PagingRequest;
 import com.example.iter.common.dto.response.PageResponse;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
-import com.example.iter.device.domain.entity.Equipment;
-import com.example.iter.device.domain.entity.EquipmentImage;
-import com.example.iter.device.domain.repository.EquipmentImageRepository;
-import com.example.iter.device.domain.repository.EquipmentRepository;
+import com.example.iter.device.api.EquipmentInfo;
+import com.example.iter.device.api.EquipmentQueryPort;
+import com.example.iter.device.api.EquipmentThumbnailQueryPort;
 import com.example.iter.dispute.domain.entity.Dispute;
 import com.example.iter.dispute.domain.repository.DisputeRepository;
 import com.example.iter.reservation.domain.entity.*;
@@ -39,8 +38,8 @@ import java.util.stream.Collectors;
 public class ReturnService {
 
     private final RentalRepository rentalRepository;
-    private final EquipmentRepository equipmentRepository;
-    private final EquipmentImageRepository equipmentImageRepository;
+    private final EquipmentQueryPort equipmentQueryPort;
+    private final EquipmentThumbnailQueryPort equipmentThumbnailQueryPort;
     private final UserQueryPort userQueryPort;
     private final ReceiptRepository receiptRepository;
     private final ReceiptImageRepository receiptImageRepository;
@@ -77,7 +76,7 @@ public class ReturnService {
     @Transactional(readOnly = true)
     public ReturnComparisonResponse getReturnComparison(Long userId, Long rentalId) {
         Rental rental = findRental(rentalId);
-        Equipment equipment = findEquipment(rental.getEquipmentId());
+        EquipmentInfo equipment = findEquipment(rental.getEquipmentId());
 
         validateParty(userId, rental, equipment);
 
@@ -103,7 +102,7 @@ public class ReturnService {
     @Transactional
     public ReturnConfirmationResponse confirmReturn(Long ownerId, Long rentalId, ReturnConfirmationRequest request) {
         Rental rental = findRentalWithLock(rentalId);
-        Equipment equipment = findEquipment(rental.getEquipmentId());
+        EquipmentInfo equipment = findEquipment(rental.getEquipmentId());
 
         validateOwner(ownerId, equipment);
         validateConfirmationStatus(rental);
@@ -194,14 +193,7 @@ public class ReturnService {
 
     // 장비 썸네일을 장비 ID 기준으로 일괄 조회합니다.
     private Map<Long, String> findThumbnailsByEquipmentId(Set<Long> equipmentIds) {
-        return equipmentImageRepository
-                .findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(equipmentIds)
-                .stream()
-                .collect(Collectors.toMap(
-                        image -> image.getEquipment().getId(),
-                        EquipmentImage::getImageUrl,
-                        (first, ignored) -> first
-                ));
+        return equipmentThumbnailQueryPort.findThumbnailUrls(equipmentIds);
     }
 
     // 거래와 일괄 조회한 데이터를 반납 확인 대상 응답으로 변환합니다.
@@ -239,8 +231,8 @@ public class ReturnService {
     }
 
     // 장비를 조회합니다.
-    private Equipment findEquipment(Long equipmentId) {
-        return equipmentRepository.findById(equipmentId)
+    private EquipmentInfo findEquipment(Long equipmentId) {
+        return equipmentQueryPort.find(equipmentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.EQUIPMENT_NOT_FOUND));
     }
 
@@ -302,7 +294,7 @@ public class ReturnService {
         );
     }
 
-    private void validateParty(Long userId, Rental rental, Equipment equipment) {
+    private void validateParty(Long userId, Rental rental, EquipmentInfo equipment) {
         boolean renter = rental.isRenter(userId);
         boolean owner = equipment.isOwnedBy(userId);
 
@@ -312,7 +304,7 @@ public class ReturnService {
     }
 
     // 로그인 사용자가 장비 등록자인지 확인합니다.
-    private void validateOwner(Long ownerId, Equipment equipment) {
+    private void validateOwner(Long ownerId, EquipmentInfo equipment) {
         if (!equipment.isOwnedBy(ownerId)) {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
