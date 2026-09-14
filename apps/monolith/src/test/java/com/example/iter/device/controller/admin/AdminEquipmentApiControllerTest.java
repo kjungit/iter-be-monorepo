@@ -3,7 +3,7 @@ package com.example.iter.device.controller.admin;
 import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
-import com.example.iter.auth.dto.response.UserSummaryResponse;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.config.RestApiSecurityTestConfig;
 import com.example.iter.common.dto.response.CursorPageResponse;
 import com.example.iter.common.exception.GlobalExceptionHandler;
@@ -95,7 +95,7 @@ class AdminEquipmentApiControllerTest {
                 EquipmentCategory.LAPTOP,
                 BigDecimal.valueOf(30000),
                 EquipmentStatus.ACTIVE,
-                new UserSummaryResponse(USER_ID, "등록자"),
+                new UserSummary(USER_ID, "등록자"),
                 "https://example.com/thumbnail.jpg",
                 LocalDateTime.of(2026, 8, 1, 10, 0)
         );
@@ -260,7 +260,7 @@ class AdminEquipmentApiControllerTest {
     private AdminEquipmentDetailResponse detailResponse(EquipmentStatus status) {
         return new AdminEquipmentDetailResponse(
                 EQUIPMENT_ID,
-                new UserSummaryResponse(USER_ID, "등록자"),
+                new UserSummary(USER_ID, "등록자"),
                 EquipmentCategory.LAPTOP,
                 "맥북 프로",
                 "테스트 장비",

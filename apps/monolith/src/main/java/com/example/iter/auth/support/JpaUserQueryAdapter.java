@@ -2,13 +2,18 @@ package com.example.iter.auth.support;
 
 import com.example.iter.auth.api.UserProfile;
 import com.example.iter.auth.api.UserQueryPort;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.auth.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 // auth/api/UserQueryPort 의 모놀리스 구현. 같은 프로세스이므로 리포지토리를 직접 호출한다.
 // 서비스가 분리되면 이 클래스만 RestUserQueryAdapter 로 교체한다.
@@ -35,6 +40,22 @@ public class JpaUserQueryAdapter implements UserQueryPort {
     @Transactional(readOnly = true)
     public Optional<UserProfile> findProfile(Long userId) {
         return userRepository.findById(userId).map(JpaUserQueryAdapter::toProfile);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<UserSummary> findSummary(Long userId) {
+        return userRepository.findSummaryById(userId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Long, UserSummary> findSummaries(Collection<Long> userIds) {
+        if (userIds.isEmpty()) {
+            return Map.of();
+        }
+        return userRepository.findSummariesByIdIn(userIds).stream()
+                .collect(Collectors.toMap(UserSummary::userId, Function.identity()));
     }
 
     // 매핑을 UserProfile 의 static 팩터리가 아니라 어댑터에 두는 이유:

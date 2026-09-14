@@ -1,9 +1,10 @@
 package com.example.iter.reservation.service;
 
+import com.example.iter.auth.api.UserQueryPort;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
 import com.example.iter.auth.domain.repository.UserRepository;
-import com.example.iter.auth.dto.response.UserSummaryResponse;
 import com.example.iter.common.dto.response.PageResponse;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
@@ -59,7 +60,9 @@ public class RentalService {
 
     private final RentalRepository rentalRepository;
     private final EquipmentRepository equipmentRepository;
+    // 락 경로(findWithLockById)만 남아 있다. PR 05 에서 UserLockPort 로 옮기면 이 필드는 사라진다.
     private final UserRepository userRepository;
+    private final UserQueryPort userQueryPort;
     private final PaymentRepository paymentRepository;
     private final TossPaymentClient tossPaymentClient;
     private final ApplicationEventPublisher eventPublisher;
@@ -145,9 +148,9 @@ public class RentalService {
             throw new CustomException(ErrorCode.RENTAL_NOT_PARTY);
         }
 
-        User renter = userRepository.findById(rental.getRenterId())
+        UserSummary renter = userQueryPort.findSummary(rental.getRenterId())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        User owner = userRepository.findById(equipment.getOwnerId())
+        UserSummary owner = userQueryPort.findSummary(equipment.getOwnerId())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         PaymentStatus paymentStatus = paymentRepository.findByRentalId(rentalId)
                 .map(Payment::getStatus)
@@ -172,11 +175,11 @@ public class RentalService {
                 )
         );
 
-        Map<Long, UserSummaryResponse> renterMap = loadRenterSummaries(rentals.getContent());
+        Map<Long, UserSummary> renterMap = loadRenterSummaries(rentals.getContent());
         Map<Long, PaymentStatus> paymentStatusMap = loadPaymentStatuses(rentals.getContent());
 
         Page<RentalReceivedItemResponse> response = rentals.map(rental -> {
-            UserSummaryResponse renter = renterMap.get(rental.getRenterId());
+            UserSummary renter = renterMap.get(rental.getRenterId());
             if (renter == null) {
                 throw new CustomException(ErrorCode.USER_NOT_FOUND);
             }
@@ -187,7 +190,7 @@ public class RentalService {
         return PageResponse.from(response);
     }
 
-    private Map<Long, UserSummaryResponse> loadRenterSummaries(List<Rental> rentals) {
+    private Map<Long, UserSummary> loadRenterSummaries(List<Rental> rentals) {
         if (rentals.isEmpty()) {
             return Map.of();
         }
@@ -197,8 +200,7 @@ public class RentalService {
                 .distinct()
                 .toList();
 
-        return userRepository.findSummariesByIdIn(renterIds).stream()
-                .collect(Collectors.toMap(UserSummaryResponse::userId, Function.identity()));
+        return userQueryPort.findSummaries(renterIds);
     }
 
     private Map<Long, PaymentStatus> loadPaymentStatuses(List<Rental> rentals) {

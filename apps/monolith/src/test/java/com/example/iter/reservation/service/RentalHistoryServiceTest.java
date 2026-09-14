@@ -3,7 +3,8 @@ package com.example.iter.reservation.service;
 import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
-import com.example.iter.auth.domain.repository.UserRepository;
+import com.example.iter.auth.api.UserQueryPort;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.common.dto.request.PagingRequest;
 import com.example.iter.common.exception.CustomException;
 import com.example.iter.common.exception.ErrorCode;
@@ -36,6 +37,7 @@ import org.springframework.data.jpa.domain.Specification;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -67,7 +69,7 @@ class RentalHistoryServiceTest {
     private EquipmentImageRepository equipmentImageRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private UserQueryPort userQueryPort;
 
     @Spy
     private RentalHistoryMapper rentalHistoryMapper = new RentalHistoryMapper();
@@ -87,7 +89,7 @@ class RentalHistoryServiceTest {
                 "예약 당시 맥북"
         );
         Equipment equipment = equipment(EQUIPMENT_ID, OWNER_ID, "현재 변경된 장비명");
-        User owner = user(OWNER_ID, "등록자");
+        UserSummary owner = user(OWNER_ID, "등록자");
         EquipmentImage thumbnail = thumbnail(1L, equipment, "https://example.com/macbook.jpg", 1);
 
         when(rentalHistoryRepository.findAll(
@@ -95,7 +97,7 @@ class RentalHistoryServiceTest {
                 any(Pageable.class)
         )).thenReturn(page(rental));
         when(equipmentRepository.findAllById(any())).thenReturn(List.of(equipment));
-        when(userRepository.findAllById(any())).thenReturn(List.of(owner));
+        when(userQueryPort.findSummaries(any())).thenReturn(Map.of(owner.userId(), owner));
         when(equipmentImageRepository.findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(anyCollection()))
                 .thenReturn(List.of(thumbnail));
 
@@ -136,7 +138,7 @@ class RentalHistoryServiceTest {
                 LocalDate.now().minusDays(10),
                 "예약 당시 카메라"
         );
-        User renter = user(RENTER_ID, "대여자");
+        UserSummary renter = user(RENTER_ID, "대여자");
 
         when(rentalHistoryRepository.findLentHistory(
                 eq(OWNER_ID),
@@ -144,7 +146,7 @@ class RentalHistoryServiceTest {
                 eq("카메라"),
                 any(Pageable.class)
         )).thenReturn(page(rental));
-        when(userRepository.findAllById(any())).thenReturn(List.of(renter));
+        when(userQueryPort.findSummaries(any())).thenReturn(Map.of(renter.userId(), renter));
         when(equipmentImageRepository.findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(anyCollection()))
                 .thenReturn(List.of(thumbnail(2L, equipment, "https://example.com/camera.jpg", 1)));
 
@@ -181,7 +183,7 @@ class RentalHistoryServiceTest {
         assertThat(response.size()).isEqualTo(5);
         assertThat(response.totalElements()).isZero();
         assertThat(response.totalPages()).isZero();
-        verifyNoInteractions(equipmentRepository, equipmentImageRepository, userRepository);
+        verifyNoInteractions(equipmentRepository, equipmentImageRepository, userQueryPort);
         verify(rentalHistoryMapper, never()).toResponse(any(), any(), any(), any(Integer.class));
     }
 
@@ -209,7 +211,7 @@ class RentalHistoryServiceTest {
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.EQUIPMENT_NOT_FOUND);
 
-        verifyNoInteractions(userRepository, equipmentImageRepository);
+        verifyNoInteractions(userQueryPort, equipmentImageRepository);
     }
 
     @Test
@@ -228,7 +230,7 @@ class RentalHistoryServiceTest {
                 any(Pageable.class)
         )).thenReturn(page(rental));
         when(equipmentRepository.findAllById(any())).thenReturn(List.of(equipment));
-        when(userRepository.findAllById(any())).thenReturn(List.of());
+        when(userQueryPort.findSummaries(any())).thenReturn(Map.of());
         when(equipmentImageRepository.findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(anyCollection()))
                 .thenReturn(List.of());
 
@@ -257,7 +259,7 @@ class RentalHistoryServiceTest {
                 isNull(),
                 any(Pageable.class)
         )).thenReturn(page(rental));
-        when(userRepository.findAllById(any())).thenReturn(List.of());
+        when(userQueryPort.findSummaries(any())).thenReturn(Map.of());
         when(equipmentImageRepository.findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(anyCollection()))
                 .thenReturn(List.of());
 
@@ -273,7 +275,7 @@ class RentalHistoryServiceTest {
     @Test
     void 빌린_장비_연체_이력은_연체_상태와_종료일_순으로_조회한다() {
         Equipment equipment = equipment(EQUIPMENT_ID, OWNER_ID, "연체 장비");
-        User owner = user(OWNER_ID, "등록자");
+        UserSummary owner = user(OWNER_ID, "등록자");
 
         when(rentalHistoryRepository.findByRenterIdAndEndDateBeforeAndStatusIn(
                 eq(RENTER_ID),
@@ -294,7 +296,7 @@ class RentalHistoryServiceTest {
             return new PageImpl<>(List.of(overdueRental), pageable, 1);
         });
         when(equipmentRepository.findAllById(any())).thenReturn(List.of(equipment));
-        when(userRepository.findAllById(any())).thenReturn(List.of(owner));
+        when(userQueryPort.findSummaries(any())).thenReturn(Map.of(owner.userId(), owner));
         when(equipmentImageRepository.findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(anyCollection()))
                 .thenReturn(List.of());
 
@@ -322,7 +324,7 @@ class RentalHistoryServiceTest {
 
     @Test
     void 빌려준_장비_연체_이력은_등록자_ID로_조회한다() {
-        User renter = user(RENTER_ID, "대여자");
+        UserSummary renter = user(RENTER_ID, "대여자");
         when(rentalHistoryRepository.findLentOverdueHistory(
                 eq(OWNER_ID),
                 any(LocalDate.class),
@@ -341,7 +343,7 @@ class RentalHistoryServiceTest {
             );
             return new PageImpl<>(List.of(overdueRental), pageable, 1);
         });
-        when(userRepository.findAllById(any())).thenReturn(List.of(renter));
+        when(userQueryPort.findSummaries(any())).thenReturn(Map.of(renter.userId(), renter));
         when(equipmentImageRepository.findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(anyCollection()))
                 .thenReturn(List.of());
 
@@ -388,7 +390,7 @@ class RentalHistoryServiceTest {
                 any(Pageable.class)
         )).thenReturn(new PageImpl<>(List.of(firstRental, secondRental), PageRequest.of(0, 20), 2));
         when(equipmentRepository.findAllById(any())).thenReturn(List.of(firstEquipment, secondEquipment));
-        when(userRepository.findAllById(any())).thenReturn(List.of(user(2L, "첫 등록자"), user(3L, "둘째 등록자")));
+        when(userQueryPort.findSummaries(any())).thenReturn(Map.of(2L, user(2L, "첫 등록자"), 3L, user(3L, "둘째 등록자")));
         when(equipmentImageRepository.findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(anyCollection()))
                 .thenReturn(List.of(
                         thumbnail(1L, firstEquipment, "first-old.jpg", 1),
@@ -405,7 +407,7 @@ class RentalHistoryServiceTest {
         assertThat(response.content().get(0).thumbnailUrl()).isEqualTo("first-old.jpg");
         assertThat(response.content().get(1).thumbnailUrl()).isEqualTo("second.jpg");
         verify(equipmentRepository, times(1)).findAllById(any());
-        verify(userRepository, times(1)).findAllById(any());
+        verify(userQueryPort, times(1)).findSummaries(any());
         verify(equipmentImageRepository, times(1))
                 .findByEquipment_IdInAndThumbnailTrueOrderBySortOrderAscIdAsc(anyCollection());
     }
@@ -449,16 +451,8 @@ class RentalHistoryServiceTest {
                 .build();
     }
 
-    private User user(Long id, String nickname) {
-        return User.builder()
-                .id(id)
-                .email("user" + id + "@iter.test")
-                .password("encoded-password")
-                .name("사용자" + id)
-                .nickname(nickname)
-                .role(Role.USER)
-                .status(UserStatus.ACTIVE)
-                .build();
+    private UserSummary user(Long id, String nickname) {
+        return new UserSummary(id, nickname);
     }
 
     private EquipmentImage thumbnail(

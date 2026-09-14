@@ -1,5 +1,7 @@
 package com.example.iter.dispute.service;
 
+import com.example.iter.auth.api.UserQueryPort;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
 import com.example.iter.auth.domain.repository.UserRepository;
@@ -38,7 +40,9 @@ public class ReportService {
     );
 
     private final ReportRepository reportRepository;
+    // 락 경로(findWithLockById)만 남아 있다. PR 05 에서 UserLockPort 로 옮기면 이 필드는 사라진다.
     private final UserRepository userRepository;
+    private final UserQueryPort userQueryPort;
     private final ReportTargetValidator reportTargetValidator;
     private final ReportMapper reportMapper;
 
@@ -69,13 +73,15 @@ public class ReportService {
                 savedReport.getId(), reporterId, savedReport.getTargetType(),
                 savedReport.getTargetId(), savedReport.getStatus());
 
-        return reportMapper.toDetail(savedReport, reporter);
+        // 락으로 잡아둔 엔티티에서 바로 요약을 만든다 — 같은 회원을 포트로 다시 조회하면 쿼리가 하나 더 는다.
+        // 락 획득 자체는 PR 05 에서 UserLockPort 로 옮긴다.
+        return reportMapper.toDetail(savedReport, new UserSummary(reporter.getId(), reporter.getNickname()));
     }
 
     // 로그인 사용자가 작성한 신고를 검색 조건과 페이지 정보로 조회합니다.
     @Transactional(readOnly = true)
     public PageResponse<ReportSummaryResponse> getMyReports(Long reporterId, ReportSearchRequest request) {
-        User reporter = userRepository.findById(reporterId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        UserSummary reporter = userQueryPort.findSummary(reporterId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         Page<ReportSummaryResponse> reports = reportRepository.findAll(
                 ReportSpecifications.myReports(reporterId, request.targetType(), request.status()),
@@ -88,7 +94,7 @@ public class ReportService {
     // 로그인 사용자가 작성한 특정 신고의 상세 정보를 조회합니다.
     @Transactional(readOnly = true)
     public ReportDetailResponse getMyReport(Long reporterId, Long reportId) {
-        User reporter = userRepository.findById(reporterId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        UserSummary reporter = userQueryPort.findSummary(reporterId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         Report report = reportRepository.findByIdAndReporterId(reportId, reporterId).orElseThrow(() -> new CustomException(ErrorCode.REPORT_NOT_FOUND));
 
         return reportMapper.toDetail(report, reporter);

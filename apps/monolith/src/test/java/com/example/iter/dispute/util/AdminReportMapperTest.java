@@ -1,5 +1,6 @@
 package com.example.iter.dispute.util;
 
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.dispute.domain.entity.Report;
 import com.example.iter.dispute.domain.entity.ReportStatus;
@@ -23,7 +24,7 @@ class AdminReportMapperTest {
     @Test
     void 신고와_신고자를_관리자_목록_응답으로_변환한다() {
         Report report = report();
-        User reporter = reporter();
+        UserSummary reporter = reporter();
 
         var response = adminReportMapper.toSummary(report, reporter);
 
@@ -40,7 +41,7 @@ class AdminReportMapperTest {
     @Test
     void 기본_신고_상세에_관리자_메모와_수정시각을_추가한다() {
         Report report = report();
-        User reporter = reporter();
+        UserSummary reporter = reporter();
 
         var response = adminReportMapper.toDetail(report, reporter);
 
@@ -68,13 +69,7 @@ class AdminReportMapperTest {
         return report;
     }
 
-    private User reporter() {
-        return User.builder()
-                .id(2L)
-                .email("reporter@iter.test")
-                .password("encoded-password")
-                .name("신고자")
-                .nickname("신고자")
-                .build();
+    private UserSummary reporter() {
+        return new UserSummary(2L, "신고자");
     }
 }

@@ -3,7 +3,7 @@ package com.example.iter.dispute.controller.admin;
 import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
 import com.example.iter.common.security.UserStatus;
-import com.example.iter.auth.dto.response.UserSummaryResponse;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.config.RestApiSecurityTestConfig;
 import com.example.iter.common.dto.response.CursorPageResponse;
 import com.example.iter.common.exception.GlobalExceptionHandler;
@@ -90,7 +90,7 @@ class AdminReportApiControllerTest {
     void 관리자가_신고_목록을_조건과_커서로_조회한다() throws Exception {
         ReportSummaryResponse summary = new ReportSummaryResponse(
                 REPORT_ID,
-                new UserSummaryResponse(REPORTER_ID, "신고자"),
+                new UserSummary(REPORTER_ID, "신고자"),
                 ReportTargetType.EQUIPMENT,
                 100L,
                 "허위 장비",
@@ -257,7 +257,7 @@ class AdminReportApiControllerTest {
                 : null;
         ReportDetailResponse report = new ReportDetailResponse(
                 REPORT_ID,
-                new UserSummaryResponse(REPORTER_ID, "신고자"),
+                new UserSummary(REPORTER_ID, "신고자"),
                 ReportTargetType.USER,
                 50L,
                 "신고 사유",

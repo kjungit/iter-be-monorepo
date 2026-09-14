@@ -2,7 +2,7 @@ package com.example.iter.reservation.controller.api;
 
 import com.example.iter.common.security.Role;
 import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.dto.response.UserSummaryResponse;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.config.RestApiSecurityTestConfig;
 import com.example.iter.common.dto.request.PagingRequest;
 import com.example.iter.common.dto.response.PageResponse;
@@ -79,7 +79,7 @@ class ReturnApiControllerTest {
                 RENTAL_ID,
                 "예약 당시 맥북",
                 "https://example.com/thumbnail.jpg",
-                new UserSummaryResponse(2L, "대여자닉네임"),
+                new UserSummary(2L, "대여자닉네임"),
                 LocalDate.of(2026, 8, 10),
                 LocalDate.of(2026, 8, 11)
         );
@@ -300,7 +300,7 @@ class ReturnApiControllerTest {
         return new ReturnComparisonResponse(
                 RENTAL_ID,
                 "예약 당시 맥북",
-                new UserSummaryResponse(2L, "대여자닉네임"),
+                new UserSummary(2L, "대여자닉네임"),
                 LocalDate.of(2026, 8, 1),
                 LocalDate.of(2026, 8, 10),
                 LocalDate.of(2026, 8, 11),

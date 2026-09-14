@@ -1,7 +1,8 @@
 package com.example.iter.device.service;
 
 import com.example.iter.auth.domain.entity.User;
-import com.example.iter.auth.domain.repository.UserRepository;
+import com.example.iter.auth.api.UserQueryPort;
+import com.example.iter.auth.api.UserSummary;
 import com.example.iter.common.audit.domain.entity.AdminActionTargetType;
 import com.example.iter.common.audit.domain.entity.AdminActionType;
 import com.example.iter.common.audit.service.AdminActionService;
@@ -23,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,7 +47,7 @@ class AdminEquipmentServiceStatusTest {
     private EquipmentImageRepository equipmentImageRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private UserQueryPort userQueryPort;
 
     @Mock
     private AdminActionService adminActionService;
@@ -59,14 +61,14 @@ class AdminEquipmentServiceStatusTest {
     @Test
     void 차단을_해제하면_INACTIVE_상태로_복구한다() {
         Equipment equipment = equipment(EquipmentStatus.SUSPENDED);
-        User owner = User.builder().id(OWNER_ID).build();
+        UserSummary owner = new UserSummary(OWNER_ID, "등록자");
         AdminEquipmentStatusRequest request = new AdminEquipmentStatusRequest(
                 EquipmentStatus.INACTIVE,
                 "차단 사유 해소"
         );
 
         when(equipmentRepository.findByIdForUpdate(EQUIPMENT_ID)).thenReturn(Optional.of(equipment));
-        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner));
+        when(userQueryPort.findSummary(OWNER_ID)).thenReturn(Optional.of(owner));
         when(equipmentImageRepository.findByEquipmentIdOrderBySortOrderAsc(EQUIPMENT_ID))
                 .thenReturn(List.of());
 
