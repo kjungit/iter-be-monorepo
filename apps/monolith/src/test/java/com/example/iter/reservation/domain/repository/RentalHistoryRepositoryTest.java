@@ -6,7 +6,7 @@ import com.example.iter.device.domain.entity.EquipmentStatus;
 import com.example.iter.device.domain.entity.ProductConditionType;
 import com.example.iter.device.domain.repository.EquipmentRepository;
 import com.example.iter.reservation.domain.entity.Rental;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.domain.repository.spec.RentalSpecifications;
 import com.example.iter.reservation.util.RentalOverduePolicy;
 import org.junit.jupiter.api.Test;

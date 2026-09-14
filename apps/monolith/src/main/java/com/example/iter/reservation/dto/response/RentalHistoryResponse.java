@@ -1,7 +1,7 @@
 package com.example.iter.reservation.dto.response;
 
 import com.example.iter.auth.api.UserSummary;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

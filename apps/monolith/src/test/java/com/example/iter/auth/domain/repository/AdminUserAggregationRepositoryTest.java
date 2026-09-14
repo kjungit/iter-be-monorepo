@@ -10,7 +10,7 @@ import com.example.iter.dispute.domain.entity.ReportStatus;
 import com.example.iter.dispute.domain.entity.ReportTargetType;
 import com.example.iter.dispute.domain.repository.ReportRepository;
 import com.example.iter.reservation.domain.entity.Rental;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.reservation.domain.repository.RentalRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

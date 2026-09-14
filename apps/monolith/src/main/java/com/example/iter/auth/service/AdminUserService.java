@@ -21,8 +21,9 @@ import com.example.iter.common.pagination.CursorKey;
 import com.example.iter.device.domain.repository.EquipmentRepository;
 import com.example.iter.dispute.domain.entity.ReportTargetType;
 import com.example.iter.dispute.domain.repository.ReportRepository;
-import com.example.iter.reservation.domain.entity.RentalStatus;
-import com.example.iter.reservation.domain.repository.RentalRepository;
+import com.example.iter.reservation.api.RentalStatus;
+import com.example.iter.reservation.api.RentalQueryPort;
+import com.example.iter.reservation.api.UserRentalStats;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -42,7 +43,7 @@ public class AdminUserService {
 
     private final UserRepository userRepository;
     private final EquipmentRepository equipmentRepository;
-    private final RentalRepository rentalRepository;
+    private final RentalQueryPort rentalQueryPort;
     private final ReportRepository reportRepository;
     private final AdminActionService adminActionService;
     private final AdminUserMapper adminUserMapper;
@@ -101,9 +102,11 @@ public class AdminUserService {
     public AdminUserDetailResponse getUser(Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        long rentedCount = rentalRepository.countByRenterIdAndStatusIn(userId, ESTABLISHED_STATUSES);
-        long lentCount = rentalRepository.countLentByOwnerIdAndStatusIn(userId, ESTABLISHED_STATUSES);
-        long overdueCount = rentalRepository.countByRenterIdAndEndDateBeforeAndStatusIn(userId, LocalDate.now(), OVERDUE_STATUSES);
+        // "성사된 거래"와 "연체" 의 정의는 reservation 이 가진다.
+        UserRentalStats rentalStats = rentalQueryPort.countUserRentalStats(userId, LocalDate.now());
+        long rentedCount = rentalStats.rentedCount();
+        long lentCount = rentalStats.lentCount();
+        long overdueCount = rentalStats.overdueCount();
         long reportCount = reportRepository.countByTargetTypeAndTargetId(ReportTargetType.USER, userId);
 
         return adminUserMapper.toDetail(

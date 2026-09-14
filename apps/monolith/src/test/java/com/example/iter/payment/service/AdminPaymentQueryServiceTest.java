@@ -10,7 +10,7 @@ import com.example.iter.payment.dto.request.AdminPaymentSearchRequest;
 import com.example.iter.payment.service.model.AdminPaymentDetailRow;
 import com.example.iter.payment.service.model.AdminPaymentSummaryRow;
 import com.example.iter.payment.util.AdminPaymentMapper;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;

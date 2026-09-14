@@ -1,5 +1,6 @@
 package com.example.iter.reservation.service;
 
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.auth.api.UserQueryPort;
 import com.example.iter.auth.api.UserSummary;
 import com.example.iter.common.dto.request.PagingRequest;

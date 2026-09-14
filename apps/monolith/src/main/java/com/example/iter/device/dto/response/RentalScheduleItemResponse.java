@@ -1,7 +1,7 @@
 package com.example.iter.device.dto.response;
 
-import com.example.iter.reservation.domain.entity.Rental;
-import com.example.iter.reservation.domain.entity.RentalStatus;
+import com.example.iter.reservation.api.RentalScheduleItem;
+import com.example.iter.reservation.api.RentalStatus;
 
 import java.time.LocalDate;
 
@@ -11,12 +11,12 @@ public record RentalScheduleItemResponse(
         LocalDate endDate,
         RentalStatus status
 ) {
-    public static RentalScheduleItemResponse from(Rental rental) {
+    public static RentalScheduleItemResponse from(RentalScheduleItem item) {
         return new RentalScheduleItemResponse(
-                rental.getId(),
-                rental.getStartDate(),
-                rental.getEndDate(),
-                rental.getStatus()
+                item.rentalId(),
+                item.startDate(),
+                item.endDate(),
+                item.status()
         );
     }
 }

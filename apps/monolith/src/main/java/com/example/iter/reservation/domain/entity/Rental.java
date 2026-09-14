@@ -1,5 +1,6 @@
 package com.example.iter.reservation.domain.entity;
 
+import com.example.iter.reservation.api.RentalStatus;
 import com.example.iter.common.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
